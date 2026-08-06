@@ -17,6 +17,14 @@ class ArchitectureModulaireTest {
     noClasses().that().resideInAPackage("..interfaceapi..").should().dependOnClassesThat()
         .resideInAnyPackage("..infrastructure..").check(classes);
   }
+  @Test void application_independante_des_dto_http() {
+    noClasses().that().resideInAPackage("..application..").should().dependOnClassesThat()
+        .resideInAnyPackage("..interfaceapi..").check(classes);
+  }
+  @Test void domaine_independant_des_couches_exterieures() {
+    noClasses().that().resideInAPackage("..domaine..").should().dependOnClassesThat()
+        .resideInAnyPackage("..application..","..interfaceapi..","..infrastructure..").check(classes);
+  }
   @Test void adaptateurs_dans_infrastructure() {
     classes().that().haveSimpleNameStartingWith("Adaptateur").should().resideInAPackage("..infrastructure..").check(classes);
   }
