@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: hydrosea-app
+  datasource:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/hydrosea}
+    username: ${POSTGRES_APP_USER:hydrosea_app}
+    password: ${POSTGRES_APP_PASSWORD:}
+  flyway:
+    url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/hydrosea}
+    user: ${POSTGRES_MIGRATION_USER:hydrosea_migration}
+    password: ${POSTGRES_MIGRATION_PASSWORD:}
+    schemas: ref,evt,app
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER:http://auth.hydrosea.local/realms/hydrosea}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://auth.hydrosea.local/realms/hydrosea/protocol/openid-connect/certs}
+  jackson:
+    property-naming-strategy: SNAKE_CASE
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:hydrosea_app}
+    password: ${RABBITMQ_PASSWORD:}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+hydrosea:
+  environnement: ${HYDROSEA_ENV:local}
+  securite:
+    audience: ${KEYCLOAK_AUDIENCE:hydrosea-api}
+    issuer: ${KEYCLOAK_ISSUER:http://auth.hydrosea.local/realms/hydrosea}
+    jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://auth.hydrosea.local/realms/hydrosea/protocol/openid-connect/certs}
+  idempotence:
+    retention: ${IDEMPOTENCE_RETENTION:PT24H}
+  evenements:
+    echange: ${RABBITMQ_EXCHANGE:hydrosea.metier}
+  stockage:
+    url: ${MINIO_URL:http://localhost:9000}
+    acces: ${MINIO_ACCESS_KEY:hydrosea_app}
+    secret: ${MINIO_SECRET_KEY:}
+    bucket: ${MINIO_BUCKET:hydrosea-documents}
