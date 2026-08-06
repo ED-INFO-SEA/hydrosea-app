@@ -9,8 +9,8 @@ jobs:
   contrats-et-frontend:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with: {node-version: '22.18.0', cache: npm, cache-dependency-path: frontend/package-lock.json}
       - name: Installer
         working-directory: frontend
@@ -27,29 +27,29 @@ jobs:
           npm run format:check
           npm test -- --coverage
           npm run build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with: {name: rapports-frontend, path: frontend/coverage, if-no-files-found: ignore}
   backend:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with: {distribution: temurin, java-version: '21', cache: maven}
       - name: Compiler, analyser et tester
         working-directory: backend
         run: mvn -B verify
       - name: Contrôler secrets, versions et journaux
         run: sh tests/controle-statique.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with: {name: rapports-backend, path: 'backend/target/site', if-no-files-found: ignore}
   integration:
     runs-on: ubuntu-24.04
     needs: [backend]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
         with: {distribution: temurin, java-version: '21', cache: maven}
       - name: Tester les migrations et intégrations
         working-directory: backend
@@ -57,6 +57,6 @@ jobs:
       - name: Collecter les journaux Docker
         if: failure()
         run: docker ps -a && docker logs $(docker ps -aq) > journaux-conteneurs.log 2>&1 || true
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: failure()
         with: {name: journaux-integration, path: journaux-conteneurs.log, if-no-files-found: ignore}
