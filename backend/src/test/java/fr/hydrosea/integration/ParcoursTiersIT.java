@@ -34,6 +34,11 @@ class ParcoursTiersIT {
   @Container static final GenericContainer<?> MINIO=new GenericContainer<>(DockerImageName.parse("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z"))
       .withEnv("MINIO_ROOT_USER","hydrosea_test").withEnv("MINIO_ROOT_PASSWORD","secret_test_123456")
       .withCommand("server /data").withExposedPorts(9000);
+  static {
+    POSTGRES.start();
+    RABBIT.start();
+    MINIO.start();
+  }
   @DynamicPropertySource static void proprietes(DynamicPropertyRegistry r) {
     r.add("spring.datasource.url",POSTGRES::getJdbcUrl); r.add("spring.datasource.username",POSTGRES::getUsername); r.add("spring.datasource.password",POSTGRES::getPassword);
     r.add("spring.flyway.url",POSTGRES::getJdbcUrl); r.add("spring.flyway.user",POSTGRES::getUsername); r.add("spring.flyway.password",POSTGRES::getPassword);
