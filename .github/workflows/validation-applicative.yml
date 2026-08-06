@@ -19,7 +19,10 @@ jobs:
         run: |
           cd frontend && npm run generate:api
       - name: Refuser les fichiers générés obsolètes
-        run: git diff --exit-code -- api/openapi.bundle.yaml frontend/src/api/genere
+        run: |
+          sha256sum -c api/SHA256SUMS
+          test "$(cat api/VERSION)" = "307a7dd6a43e44bf7b2f52f8bc9fef3feb244a8b"
+          git diff --exit-code -- api/openapi.bundle.yaml frontend/src/api/genere
       - name: Analyser et tester le frontend
         working-directory: frontend
         run: |

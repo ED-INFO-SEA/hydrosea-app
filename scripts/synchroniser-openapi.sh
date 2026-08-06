@@ -24,5 +24,8 @@ fi
 [ -f "$source_api/openapi.yaml" ] || { echo 'Contrat api/openapi.yaml absent.' >&2; exit 3; }
 rm -rf "$destination"
 mkdir -p "$destination"
-cp -R "$source_api"/. "$destination"/
+cp "$source_api/openapi.yaml" "$destination/openapi.yaml"
+for repertoire in paths schemas examples security; do
+  [ ! -d "$source_api/$repertoire" ] || cp -R "$source_api/$repertoire" "$destination/$repertoire"
+done
 echo "Contrat OpenAPI synchronisé depuis $source_api"
