@@ -170,16 +170,48 @@ export default function App() {
                 <p>Statut : {selection.statut}</p>
                 {possedePortee('tiers:ecriture') && selection.statut !== 'ARCHIVE' && (
                   <>
-                    <form className="formulaire" onSubmit={modifier} key={selection.identifiant_tiers}>
+                    <form
+                      className="formulaire"
+                      onSubmit={modifier}
+                      key={selection.identifiant_tiers}
+                    >
                       {selection.personne_physique ? (
                         <>
-                          <label>Nom<input name="nom" required defaultValue={selection.personne_physique.nom} /></label>
-                          <label>Prénoms<input name="prenoms" required defaultValue={selection.personne_physique.prenoms} /></label>
+                          <label>
+                            Nom
+                            <input
+                              name="nom"
+                              required
+                              defaultValue={selection.personne_physique.nom}
+                            />
+                          </label>
+                          <label>
+                            Prénoms
+                            <input
+                              name="prenoms"
+                              required
+                              defaultValue={selection.personne_physique.prenoms}
+                            />
+                          </label>
                         </>
                       ) : (
                         <>
-                          <label>Raison sociale<input name="raison_sociale" required defaultValue={selection.personne_morale?.raison_sociale} /></label>
-                          <label>SIRET<input name="siret" pattern="[0-9]{14}" defaultValue={selection.personne_morale?.siret} /></label>
+                          <label>
+                            Raison sociale
+                            <input
+                              name="raison_sociale"
+                              required
+                              defaultValue={selection.personne_morale?.raison_sociale}
+                            />
+                          </label>
+                          <label>
+                            SIRET
+                            <input
+                              name="siret"
+                              pattern="[0-9]{14}"
+                              defaultValue={selection.personne_morale?.siret}
+                            />
+                          </label>
                         </>
                       )}
                       <button>Enregistrer les modifications</button>
