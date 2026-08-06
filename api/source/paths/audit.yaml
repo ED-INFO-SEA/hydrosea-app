@@ -1,0 +1,14 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+evenements:
+  get:
+    operationId: rechercher_evenements_metier
+    summary: Rechercher des événements métier
+    description: Lecture contrôlée et minimisée ; aucune charge complète ni opération d’écriture n’est exposée.
+    tags: [Audit]
+    security: [{oauth2: ['audit:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: type_evenement, in: query, schema: {type: string}}, {name: identifiant_agregat, in: query, schema: {type: string, format: uuid}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
+    responses: {'200': {description: Page d’événements minimisés, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageEvenementsMetier'}}}}, <<: *erreur}
+    x-hydrosea-bs: [A_ARBITRER_BS_AUDIT]
+    x-hydrosea-rm: [ADR-006]
+    x-hydrosea-evt: [EVT-*]
+    x-hydrosea-tables: [evt.evenement_metier]

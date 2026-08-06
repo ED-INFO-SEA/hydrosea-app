@@ -1,0 +1,127 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-correlations: &correlations
+  - {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}
+x-commande: &commande
+  - {$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}
+  - {$ref: '../openapi.yaml#/components/parameters/IfMatch'}
+  - {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}
+tiers:
+  get:
+    operationId: rechercher_tiers
+    summary: Rechercher des Tiers
+    description: Recherche multicritère et détection indicative de doublons ; la décision de fusion reste métier.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:lecture']}]
+    parameters:
+      - {name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}
+      - {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      - {name: recherche, in: query, schema: {type: string}}
+      - {name: reference, in: query, schema: {type: string}}
+      - {name: categorie, in: query, schema: {type: string, enum: [PERSONNE_PHYSIQUE, PERSONNE_MORALE]}}
+      - {name: statut, in: query, schema: {type: string}}
+    responses:
+      '200': {description: Page de Tiers, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageTiers'}}}}
+      <<: *erreur
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE]
+    x-hydrosea-evt: [EVT-TIE-001]
+    x-hydrosea-tables: [ref.tiers, ref.tiers_personne_physique, ref.tiers_personne_morale]
+  post:
+    operationId: creer_tiers
+    summary: Créer un Tiers
+    description: Crée atomiquement un Tiers personne physique ou morale et contrôle les doublons probables.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:ecriture']}]
+    parameters:
+      - {$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}
+      - {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerTiers'}, examples: {personne_physique: {$ref: '../examples/tiers.yaml#/personne_physique'}, personne_morale: {$ref: '../examples/tiers.yaml#/personne_morale'}}}}}
+    responses:
+      '201': {description: Tiers créé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}
+      <<: *erreur
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE-001, RM-TIE-002]
+    x-hydrosea-evt: [EVT-TIE-001]
+    x-hydrosea-tables: [ref.tiers, ref.tiers_personne_physique, ref.tiers_personne_morale]
+tiers_identifiant:
+  parameters:
+    - {$ref: '../openapi.yaml#/components/parameters/IdentifiantTiers'}
+  get:
+    operationId: consulter_tiers
+    summary: Consulter un Tiers
+    description: Retourne la représentation autorisée du Tiers sans données internes inutiles.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:lecture']}]
+    parameters: *correlations
+    responses:
+      '200': {description: Tiers trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}
+      <<: *erreur_cible
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE]
+    x-hydrosea-evt: [EVT-TIE-002]
+    x-hydrosea-tables: [ref.tiers]
+  patch:
+    operationId: modifier_tiers
+    summary: Modifier un Tiers
+    description: Modifie les attributs autorisés selon la version attendue ; schéma PATCH spécifique à finaliser avec l’application.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:ecriture']}]
+    parameters:
+      - {$ref: '../openapi.yaml#/components/parameters/IfMatch'}
+      - {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ModifierTiers'}}}}
+    responses:
+      '200': {description: Tiers modifié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}
+      <<: *erreur_version
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE]
+    x-hydrosea-evt: [EVT-TIE-002]
+    x-hydrosea-tables: [ref.tiers, ref.tiers_personne_physique, ref.tiers_personne_morale]
+tiers_fusionner:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantTiers'}]
+  post:
+    operationId: fusionner_tiers
+    summary: Fusionner deux Tiers
+    description: Conserve le Tiers cible et archive le doublon selon RM-TIE ; la sélection automatique du survivant n’est pas définie.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [identifiant_tiers_conserve, motif], properties: {identifiant_tiers_conserve: {type: string, format: uuid}, motif: {type: string}}}}}}
+    responses:
+      '200': {description: Tiers conservé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}
+      <<: *erreur_version
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE-004]
+    x-hydrosea-evt: [EVT-TIE-003]
+    x-hydrosea-tables: [ref.tiers]
+tiers_archiver:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantTiers'}]
+  post:
+    operationId: archiver_tiers
+    summary: Archiver un Tiers
+    description: Archive le Tiers lorsque les dépendances métier l’autorisent.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [motif], properties: {motif: {type: string}}}}}}
+    responses: {'200': {description: Tiers archivé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE]
+    x-hydrosea-evt: [EVT-TIE-004]
+    x-hydrosea-tables: [ref.tiers]
+tiers_reactiver:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantTiers'}]
+  post:
+    operationId: reactiver_tiers
+    summary: Réactiver un Tiers
+    description: Réactive un Tiers archivé lorsque la règle métier l’autorise.
+    tags: [Tiers]
+    security: [{oauth2: ['tiers:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Tiers réactivé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Tiers'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [A_ARBITRER_BS_TIERS]
+    x-hydrosea-rm: [RM-TIE]
+    x-hydrosea-evt: [EVT-TIE-005]
+    x-hydrosea-tables: [ref.tiers]

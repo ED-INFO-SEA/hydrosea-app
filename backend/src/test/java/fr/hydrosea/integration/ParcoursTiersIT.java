@@ -28,7 +28,8 @@ import org.testcontainers.utility.DockerImageName;
 @SpringBootTest(properties={"spring.task.scheduling.enabled=false","management.health.rabbit.enabled=false"})
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ParcoursTiersIT {
-  @Container static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>("postgis/postgis:16-3.5");
+  @Container static final PostgreSQLContainer<?> POSTGRES=new PostgreSQLContainer<>(
+      DockerImageName.parse("postgis/postgis:16-3.5").asCompatibleSubstituteFor("postgres"));
   @Container static final RabbitMQContainer RABBIT=new RabbitMQContainer("rabbitmq:4.1.2-management-alpine");
   @Container static final GenericContainer<?> MINIO=new GenericContainer<>(DockerImageName.parse("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z"))
       .withEnv("MINIO_ROOT_USER","hydrosea_test").withEnv("MINIO_ROOT_PASSWORD","secret_test_123456")

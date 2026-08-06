@@ -1,0 +1,265 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+compteurs:
+  get:
+    operationId: rechercher_compteurs
+    summary: Rechercher des compteurs
+    description: Recherche paginée par numéro de série et statut.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
+    responses: {'200': {description: Page de compteurs, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageCompteurs'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-001]
+    x-hydrosea-tables: [cpt.compteur]
+  post:
+    operationId: enregistrer_compteur
+    summary: Enregistrer un compteur
+    description: Enregistre un compteur dans le parc sans l’affecter à un Point.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerCompteur'}}}}
+    responses: {'201': {description: Compteur enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-001]
+    x-hydrosea-tables: [cpt.compteur]
+compteur:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  get:
+    operationId: consulter_compteur
+    summary: Consulter un compteur
+    description: Retourne le compteur et son état courant.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    responses: {'200': {description: Compteur trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-001]
+    x-hydrosea-tables: [cpt.compteur]
+  patch:
+    operationId: modifier_compteur
+    summary: Modifier un compteur
+    description: Corrige les caractéristiques autorisées sans modifier une affectation.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ModifierCompteur'}}}}
+    responses: {'200': {description: Compteur modifié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-008]
+    x-hydrosea-tables: [cpt.compteur]
+poser:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: poser_compteur
+    summary: Poser un compteur
+    description: Crée ou active l’affectation au Point de consommation.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerAffectationCompteur'}}}}
+    responses: {'201': {description: Affectation créée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-AFF, RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-003, EVT-AFF-002]
+    x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
+deposer:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: deposer_compteur
+    summary: Déposer un compteur
+    description: Clôture l’affectation active avec l’index de dépose.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [date_depose, index_depose], properties: {date_depose: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, motif: {type: string}}}}}}
+    responses: {'200': {description: Affectation clôturée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-002]
+    x-hydrosea-rm: [RM-AFF]
+    x-hydrosea-evt: [EVT-CPT-004, EVT-AFF-003]
+    x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
+remplacer:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: remplacer_compteur
+    summary: Remplacer un compteur
+    description: Lie la dépose et la pose ; l’ordre temporel définitif reste documenté dans les arbitrages de données.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [identifiant_nouveau_compteur, date_remplacement, index_depose, index_pose], properties: {identifiant_nouveau_compteur: {type: string, format: uuid}, date_remplacement: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, index_pose: {type: number, minimum: 0}}}, examples: {remplacement: {$ref: '../examples/comptage.yaml#/remplacement'}}}}}
+    responses: {'200': {description: Remplacement enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-003]
+    x-hydrosea-rm: [RM-AFF, RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-005, EVT-AFF-003, EVT-AFF-002]
+    x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
+reformer:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: reformer_compteur
+    summary: Réformer un compteur
+    description: Retire définitivement le compteur du parc utilisable selon RM-CPT.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Compteur réformé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-002]
+    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-evt: [EVT-CPT-007]
+    x-hydrosea-tables: [cpt.compteur]
+affectations:
+  get:
+    operationId: rechercher_affectations_compteur
+    summary: Rechercher des affectations de compteur
+    description: Recherche les périodes d’affectation par compteur ou Point.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    parameters: [{name: identifiant_compteur, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
+    responses: {'200': {description: Page d’affectations, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageAffectationsCompteur'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-AFF]
+    x-hydrosea-evt: [EVT-AFF-001]
+    x-hydrosea-tables: [cpt.affectation_compteur]
+  post:
+    operationId: creer_affectation_compteur
+    summary: Créer une affectation de compteur
+    description: Prépare une affectation sans contourner le Service métier de pose.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerAffectationCompteur'}}}}
+    responses: {'201': {description: Affectation préparée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-AFF]
+    x-hydrosea-evt: [EVT-AFF-001]
+    x-hydrosea-tables: [cpt.affectation_compteur]
+affectation:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantAffectation'}]
+  get:
+    operationId: consulter_affectation_compteur
+    summary: Consulter une affectation de compteur
+    description: Retourne une période d’affectation et ses index figés.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    responses: {'200': {description: Affectation trouvée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-CPT-001]
+    x-hydrosea-rm: [RM-AFF]
+    x-hydrosea-evt: [EVT-AFF-001]
+    x-hydrosea-tables: [cpt.affectation_compteur]
+cloturer_affectation:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantAffectation'}]
+  post:
+    operationId: cloturer_affectation_compteur
+    summary: Clôturer une affectation de compteur
+    description: Clôture la période sans suppression physique.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Affectation clôturée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-002]
+    x-hydrosea-rm: [RM-AFF]
+    x-hydrosea-evt: [EVT-AFF-003]
+    x-hydrosea-tables: [cpt.affectation_compteur]
+releves:
+  get:
+    operationId: rechercher_releves
+    summary: Rechercher des relèves
+    description: Recherche paginée par compteur, Point, statut et période.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    parameters: [{name: identifiant_compteur, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}, {name: statut, in: query, schema: {type: string}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
+    responses: {'200': {description: Page de relèves, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageReleves'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-004]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-001]
+    x-hydrosea-tables: [cpt.releve]
+  post:
+    operationId: enregistrer_releve
+    summary: Enregistrer une relève
+    description: Enregistre une observation sans modifier une relève validée.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerReleve'}, examples: {saisie: {$ref: '../examples/comptage.yaml#/saisie_releve'}}}}}
+    responses: {'201': {description: Relève enregistrée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-004]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-001]
+    x-hydrosea-tables: [cpt.releve]
+releve:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
+  get:
+    operationId: consulter_releve
+    summary: Consulter une relève
+    description: Retourne la mesure, son origine et son état de contrôle.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:lecture']}]
+    responses: {'200': {description: Relève trouvée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-CPT-004]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-001]
+    x-hydrosea-tables: [cpt.releve]
+valider_releve:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
+  post:
+    operationId: valider_releve
+    summary: Valider une relève
+    description: Valide la relève après contrôles automatiques ou manuels.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Relève validée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-006]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-004]
+    x-hydrosea-tables: [cpt.releve]
+rejeter_releve:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
+  post:
+    operationId: rejeter_releve
+    summary: Rejeter une relève
+    description: Rejette la relève avec un motif explicite.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [motif], properties: {motif: {type: string}}}}}}
+    responses: {'200': {description: Relève rejetée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-006]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-005]
+    x-hydrosea-tables: [cpt.releve]
+corriger_releve:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
+  post:
+    operationId: corriger_releve
+    summary: Corriger une relève
+    description: Crée une nouvelle relève liée à l’originale ; aucune réécriture silencieuse.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CorrigerReleve'}, examples: {correction: {$ref: '../examples/comptage.yaml#/correction_releve'}}}}}
+    responses: {'201': {description: Relève de correction créée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-006]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-006]
+    x-hydrosea-tables: [cpt.releve]
+importer_releves:
+  post:
+    operationId: importer_releves
+    summary: Importer un lot de relèves
+    description: Retourne un bilan ligne par ligne ; le seuil de traitement asynchrone est à arbitrer.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [releves], properties: {releves: {type: array, minItems: 1, maxItems: 1000, items: {$ref: '../openapi.yaml#/components/schemas/CreerReleve'}}}}}}}
+    responses: {'200': {description: Bilan d’import, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/BilanImportReleves'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CPT-005]
+    x-hydrosea-rm: [RM-REL]
+    x-hydrosea-evt: [EVT-REL-002]
+    x-hydrosea-tables: [cpt.releve]

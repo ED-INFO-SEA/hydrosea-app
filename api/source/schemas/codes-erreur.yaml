@@ -1,0 +1,15 @@
+codes:
+  TIE-DOUBLON-PROBABLE: Un rapprochement doit être confirmé avant création ou fusion.
+  CTR-TITULAIRE-PRINCIPAL-MANQUANT: Le contrat actif ne possède pas de titulaire principal à la date contrôlée.
+  CTR-TRANSITION-INTERDITE: La transition demandée n’est pas autorisée depuis l’état courant.
+  CPT-AFFECTATION-CHEVAUCHEMENT: Une affectation chevauche une période existante.
+  REL-INDEX-INCOHERENT: La valeur ou la chronologie des index est incohérente.
+  FAC-FACTURE-DEJA-EMISE: Une opération réservée au brouillon cible une facture émise.
+  PAI-MONTANT-DEPASSE: Le montant dépasse le paiement disponible ou le restant imputable.
+  SYS-CONFLIT-VERSION: La précondition de version n’est pas satisfaite.
+  SYS-CLE-IDEMPOTENCE-CONFLIT: La clé a déjà été utilisée pour la même opération et URI avec une empreinte de corps différente.
+  SYS-AUTHENTIFICATION-REQUISE: Le jeton OAuth2 est absent, expiré ou invalide.
+  SYS-DROIT-INSUFFISANT: Le client ne possède pas la portée requise.
+  SYS-RESSOURCE-ABSENTE: La ressource demandée n’existe pas ou n’est pas accessible au client.
+  SYS-REQUETE-INVALIDE: La requête ne respecte pas le contrat.
+  SYS-ERREUR-INTERNE: Une erreur interne empêche le traitement de la requête.

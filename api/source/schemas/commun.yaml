@@ -1,0 +1,41 @@
+components:
+  parameters:
+    IdentifiantTiers: {name: identifiant_tiers, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantContrat: {name: identifiant_contrat, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantParticipation: {name: identifiant_participation, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantPointDesserte: {name: identifiant_point_desserte, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantPointConsommation: {name: identifiant_point_consommation, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantCompteur: {name: identifiant_compteur, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantAffectation: {name: identifiant_affectation, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantReleve: {name: identifiant_releve, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantFacture: {name: identifiant_facture, in: path, required: true, schema: {type: string, format: uuid}}
+    IdentifiantPaiement: {name: identifiant_paiement, in: path, required: true, schema: {type: string, format: uuid}}
+    IdempotencyKey: {name: Idempotency-Key, in: header, required: true, schema: {type: string, minLength: 8, maxLength: 128}}
+    IfMatch: {name: If-Match, in: header, required: true, description: Version attendue de la ressource., schema: {type: string, pattern: '^"[1-9][0-9]*"$'}}
+    XCorrelationId: {name: X-Correlation-Id, in: header, required: false, schema: {type: string, format: uuid}}
+  responses:
+    RequeteInvalide:
+      description: Requête invalide.
+      content: &erreur_api
+        application/json:
+          schema: {$ref: './noyau.yaml#/components/schemas/ErreurApi'}
+    AuthentificationRequise:
+      description: Authentification requise.
+      content: *erreur_api
+    DroitInsuffisant:
+      description: Droit insuffisant.
+      content: *erreur_api
+    RessourceAbsente:
+      description: Ressource absente.
+      content: *erreur_api
+    ConflitMetier:
+      description: Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.
+      content: *erreur_api
+    PreconditionVersion:
+      description: Version If-Match non satisfaite.
+      content: *erreur_api
+    ErreurInterne:
+      description: Erreur interne sans information sensible.
+      content:
+        application/json:
+          schema: {$ref: './noyau.yaml#/components/schemas/ErreurApi'}

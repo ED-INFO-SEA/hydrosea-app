@@ -1,0 +1,59 @@
+requete_invalide:
+  code: SYS-REQUETE-INVALIDE
+  titre: Requête invalide
+  detail: Le champ date_effet doit contenir une date au format ISO 8601.
+  statut_http: 400
+  identifiant_correlation: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa
+  date_erreur: '2026-08-05T09:40:00Z'
+authentification_requise:
+  code: SYS-AUTHENTIFICATION-REQUISE
+  titre: Authentification requise
+  detail: Le jeton OAuth2 est absent ou invalide.
+  statut_http: 401
+  identifiant_correlation: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb
+  date_erreur: '2026-08-05T09:45:00Z'
+droit_insuffisant:
+  code: SYS-DROIT-INSUFFISANT
+  titre: Droit insuffisant
+  detail: Le client ne possède pas la portée contrats.ecrire.
+  statut_http: 403
+  identifiant_correlation: cccccccc-cccc-4ccc-8ccc-cccccccccccc
+  date_erreur: '2026-08-05T09:50:00Z'
+ressource_absente:
+  code: SYS-RESSOURCE-ABSENTE
+  titre: Ressource absente
+  detail: Le contrat demandé n’existe pas ou n’est pas accessible au client.
+  statut_http: 404
+  identifiant_correlation: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+  date_erreur: '2026-08-05T09:55:00Z'
+conflit_version:
+  code: SYS-CONFLIT-VERSION
+  titre: Version obsolète
+  detail: La version 4 a été demandée alors que la ressource est en version 5.
+  statut_http: 412
+  identifiant_correlation: eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee
+  date_erreur: '2026-08-05T10:00:00Z'
+  service_metier: BS-CTR-002
+regle_metier:
+  code: CTR-TITULAIRE-PRINCIPAL-MANQUANT
+  titre: Titulaire principal manquant
+  detail: Le contrat ne peut pas être activé sans titulaire principal à sa date d’effet.
+  statut_http: 409
+  identifiant_correlation: ffffffff-ffff-4fff-8fff-ffffffffffff
+  date_erreur: '2026-08-05T10:05:00Z'
+  regle_metier: RM-CTR-001
+  service_metier: BS-CTR-002
+cle_idempotence_en_conflit:
+  code: SYS-CLE-IDEMPOTENCE-CONFLIT
+  titre: Clé d’idempotence en conflit
+  detail: La clé a déjà été utilisée pour cette opération et cette URI avec un corps différent.
+  statut_http: 409
+  identifiant_correlation: 99999999-9999-4999-8999-999999999999
+  date_erreur: '2026-08-05T10:10:00Z'
+erreur_interne:
+  code: SYS-ERREUR-INTERNE
+  titre: Erreur interne
+  detail: Une erreur inattendue est survenue. Utiliser l’identifiant de corrélation pour le diagnostic.
+  statut_http: 500
+  identifiant_correlation: 88888888-8888-4888-8888-888888888888
+  date_erreur: '2026-08-05T10:15:00Z'

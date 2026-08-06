@@ -1,0 +1,114 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+factures:
+  get:
+    operationId: rechercher_factures
+    summary: Rechercher des factures
+    description: Recherche paginée par contrat, statut, référence et période.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}, {name: date_debut, in: query, schema: {type: string, format: date}}, {name: date_fin, in: query, schema: {type: string, format: date}}]
+    responses: {'200': {description: Page de factures, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageFactures'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-FAC-001]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-001]
+    x-hydrosea-tables: [fac.facture]
+calculer:
+  post:
+    operationId: calculer_factures
+    summary: Calculer des brouillons de facture
+    description: Commande le calcul sans définir la tarification dans OpenAPI.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CalculerFacture'}}}}
+    responses: {'202': {description: Calcul accepté}, <<: *erreur}
+    x-hydrosea-bs: [BS-FAC-001]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-001]
+    x-hydrosea-tables: [fac.facture, fac.ligne_facture, fac.lien_releve_facture]
+facture:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  get:
+    operationId: consulter_facture
+    summary: Consulter une facture
+    description: Retourne la pièce et ses montants sans document binaire.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:lecture']}]
+    responses: {'200': {description: Facture trouvée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Facture'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-FAC-002]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-003]
+    x-hydrosea-tables: [fac.facture]
+emettre:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  post:
+    operationId: emettre_facture
+    summary: Émettre une facture
+    description: Fige et émet un brouillon validé ; la diffusion documentaire reste à arbitrer.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Facture émise, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Facture'}, examples: {emission: {$ref: '../examples/facturation.yaml#/emission'}}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-FAC-002]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-003]
+    x-hydrosea-tables: [fac.facture, fac.ligne_facture]
+corriger:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  post:
+    operationId: corriger_facture
+    summary: Corriger une facture
+    description: Crée une pièce de correction ou un avoir lié ; le lettrage définitif reste à arbitrer.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [type_piece, motif], properties: {type_piece: {type: string, enum: [AVOIR, CORRECTION]}, motif: {type: string}}}}}}
+    responses: {'201': {description: Pièce de correction créée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Facture'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-FAC-003]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-005]
+    x-hydrosea-tables: [fac.facture, fac.ligne_facture]
+annuler:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  post:
+    operationId: annuler_facture
+    summary: Annuler une facture
+    description: Annule la pièce selon son état et conserve l’historique.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [motif], properties: {motif: {type: string}}}}}}
+    responses: {'200': {description: Facture annulée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Facture'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-FAC-004]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-004]
+    x-hydrosea-tables: [fac.facture]
+lignes:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  get:
+    operationId: consulter_lignes_facture
+    summary: Consulter les lignes d’une facture
+    description: Retourne le détail figé de la pièce.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:lecture']}]
+    responses: {'200': {description: Lignes, content: {application/json: {schema: {type: array, items: {$ref: '../openapi.yaml#/components/schemas/LigneFacture'}}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-FAC-002]
+    x-hydrosea-rm: [RM-FAC]
+    x-hydrosea-evt: [EVT-FAC-003]
+    x-hydrosea-tables: [fac.ligne_facture]
+releves_facture:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
+  get:
+    operationId: consulter_releves_facture
+    summary: Consulter les relèves d’une facture
+    description: Retourne les mesures figées utilisées comme preuves de calcul.
+    tags: [Facturation]
+    security: [{oauth2: ['facturation:lecture']}]
+    responses: {'200': {description: Relèves de la facture, content: {application/json: {schema: {type: array, items: {$ref: '../openapi.yaml#/components/schemas/Releve'}}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-FAC-001]
+    x-hydrosea-rm: [RM-FAC, RM-REL]
+    x-hydrosea-evt: [EVT-REL-008]
+    x-hydrosea-tables: [fac.lien_releve_facture, cpt.releve]

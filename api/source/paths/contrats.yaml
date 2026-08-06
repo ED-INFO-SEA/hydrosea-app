@@ -1,0 +1,189 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+x-id: &id [{$ref: '../openapi.yaml#/components/parameters/IdentifiantContrat'}]
+contrats:
+  get:
+    operationId: rechercher_contrats_abonnement
+    summary: Rechercher des contrats d’abonnement
+    description: Recherche paginée par référence, statut, Tiers ou Point de consommation.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100}}, {name: statut, in: query, schema: {type: string}}, {name: reference, in: query, schema: {type: string}}, {name: identifiant_tiers, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}]
+    responses: {'200': {description: Page de contrats, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageContratsAbonnement'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CTR-001]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-001]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat]
+  post:
+    operationId: creer_contrat_abonnement
+    summary: Créer un contrat d’abonnement
+    description: Crée un brouillon relié à un Point de consommation et à ses participants initiaux.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerContratAbonnement'}, examples: {ouverture: {$ref: '../examples/contrats.yaml#/ouverture'}}}}}
+    responses: {'201': {description: Brouillon créé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-CTR-001]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-001]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.liaison_contrat_consommation, abo.participation_contrat]
+contrat:
+  parameters: *id
+  get:
+    operationId: consulter_contrat_abonnement
+    summary: Consulter un contrat d’abonnement
+    description: Retourne le contrat, son Point de consommation et ses participants autorisés.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:lecture']}]
+    responses: {'200': {description: Contrat trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-CTR-001]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-002]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat]
+  patch:
+    operationId: modifier_contrat_abonnement
+    summary: Modifier un contrat d’abonnement
+    description: Modifie les données autorisées avant ou pendant le cycle du contrat, sans commander une transition.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ModifierContratAbonnement'}}}}
+    responses: {'200': {description: Contrat modifié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-010]
+    x-hydrosea-tables: [abo.contrat_abonnement]
+valider:
+  parameters: *id
+  post:
+    operationId: valider_contrat_abonnement
+    summary: Valider un contrat d’abonnement
+    description: Vérifie les préconditions métier avant activation ; les contrôles restent définis par RM-CTR.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Contrat validé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-002]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat]
+activer:
+  parameters: *id
+  post:
+    operationId: activer_contrat_abonnement
+    summary: Activer un contrat d’abonnement
+    description: Active un contrat validé à sa date d’effet avec un titulaire principal.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Contrat actif, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-003]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat]
+suspendre:
+  parameters: *id
+  post:
+    operationId: suspendre_contrat_abonnement
+    summary: Suspendre un contrat d’abonnement
+    description: Suspend le contrat selon le motif et la date d’effet fournis.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [motif], properties: {motif: {type: string}, date_effet: {type: string, format: date-time}}}}}}
+    responses: {'200': {description: Contrat suspendu, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-005]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-004]
+    x-hydrosea-tables: [abo.contrat_abonnement]
+reactiver:
+  parameters: *id
+  post:
+    operationId: reactiver_contrat_abonnement
+    summary: Réactiver un contrat d’abonnement
+    description: Réactive un contrat suspendu lorsque la transition est autorisée.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Contrat réactivé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-005]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-005]
+    x-hydrosea-tables: [abo.contrat_abonnement]
+resilier:
+  parameters: *id
+  post:
+    operationId: resilier_contrat_abonnement
+    summary: Résilier un contrat d’abonnement
+    description: Enregistre la date et le motif de résiliation sans supprimer l’historique.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [date_resiliation, motif], properties: {date_resiliation: {type: string, format: date-time}, motif: {type: string}}}}}}
+    responses: {'200': {description: Contrat résilié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-003]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-007]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat]
+muter:
+  parameters: *id
+  post:
+    operationId: muter_contrat_abonnement
+    summary: Muter un contrat d’abonnement
+    description: Clôture le contrat sortant et prépare le contrat entrant ; les règles de reprise sont définies par BS-CTR-004.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [identifiant_tiers_entrant, date_mutation], properties: {identifiant_tiers_entrant: {type: string, format: uuid}, date_mutation: {type: string, format: date-time}, index_sortie: {type: number, minimum: 0}}}, examples: {mutation: {$ref: '../examples/contrats.yaml#/mutation'}}}}}
+    responses: {'201': {description: Contrat entrant créé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ContratAbonnement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-004]
+    x-hydrosea-rm: [RM-CTR]
+    x-hydrosea-evt: [EVT-CTR-006]
+    x-hydrosea-tables: [abo.contrat_abonnement, abo.participation_contrat, abo.liaison_contrat_consommation]
+participants:
+  parameters: *id
+  post:
+    operationId: ajouter_participant_contrat
+    summary: Ajouter un participant au contrat
+    description: Ajoute un rôle contractuel historisé.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerParticipationContrat'}}}}
+    responses: {'201': {description: Participant ajouté, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ParticipationContrat'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-008]
+    x-hydrosea-tables: [abo.participation_contrat]
+participant:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantContrat'}, {$ref: '../openapi.yaml#/components/parameters/IdentifiantParticipation'}]
+  patch:
+    operationId: modifier_participant_contrat
+    summary: Modifier un participant au contrat
+    description: Modifie les attributs autorisés d’une participation selon sa version.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {type: object, additionalProperties: false, properties: {principal: {type: boolean}, responsabilite_financiere: {type: boolean}, ordre_affichage: {type: integer}}}}}}
+    responses: {'200': {description: Participation modifiée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ParticipationContrat'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-008]
+    x-hydrosea-tables: [abo.participation_contrat]
+cloturer_participant:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantContrat'}, {$ref: '../openapi.yaml#/components/parameters/IdentifiantParticipation'}]
+  post:
+    operationId: cloturer_participant_contrat
+    summary: Clôturer une participation au contrat
+    description: Clôture le rôle sans supprimer sa période historique.
+    tags: [Contrats]
+    security: [{oauth2: ['contrats:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [date_fin_validite, motif_fin], properties: {date_fin_validite: {type: string, format: date-time}, motif_fin: {type: string}}}}}}
+    responses: {'200': {description: Participation clôturée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ParticipationContrat'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CTR-002]
+    x-hydrosea-rm: [RM-CTR-001]
+    x-hydrosea-evt: [EVT-CTR-009]
+    x-hydrosea-tables: [abo.participation_contrat]

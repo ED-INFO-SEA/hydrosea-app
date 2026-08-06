@@ -1,0 +1,137 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+points_desserte:
+  get:
+    operationId: rechercher_points_desserte
+    summary: Rechercher des Points de desserte
+    description: Recherche le patrimoine synchronisé ; le SIG reste maître.
+    tags: [Points]
+    security: [{oauth2: ['comptage:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
+    responses: {'200': {description: Page de Points de desserte, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PagePointsDesserte'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PD]
+    x-hydrosea-evt: [EVT-PD-001]
+    x-hydrosea-tables: [des.point_desserte]
+point_desserte:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPointDesserte'}]
+  get:
+    operationId: consulter_point_desserte
+    summary: Consulter un Point de desserte
+    description: Retourne les attributs synchronisés sans opération patrimoniale d’écriture.
+    tags: [Points]
+    security: [{oauth2: ['comptage:lecture']}]
+    responses: {'200': {description: Point trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointDesserte'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PD]
+    x-hydrosea-evt: [EVT-PD-006]
+    x-hydrosea-tables: [des.point_desserte]
+synchroniser_sig:
+  post:
+    operationId: synchroniser_points_desserte_sig
+    summary: Synchroniser les Points de desserte depuis le SIG
+    description: Importe les changements du référentiel maître sans modifier le SIG.
+    tags: [Points]
+    security: [{oauth2: [administration]}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    responses: {'202': {description: Synchronisation acceptée}, <<: *erreur}
+    x-hydrosea-bs: [BS-TRV-004]
+    x-hydrosea-rm: [RM-PD]
+    x-hydrosea-evt: [EVT-PD-006]
+    x-hydrosea-tables: [des.point_desserte]
+points_consommation:
+  get:
+    operationId: rechercher_points_consommation
+    summary: Rechercher des Points de consommation
+    description: Recherche paginée par référence, statut et usage.
+    tags: [Points]
+    security: [{oauth2: ['comptage:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
+    responses: {'200': {description: Page de Points, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PagePointsConsommation'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-001]
+    x-hydrosea-tables: [des.point_consommation]
+  post:
+    operationId: creer_point_consommation
+    summary: Créer un Point de consommation
+    description: Prépare administrativement le Point relié au patrimoine SIG.
+    tags: [Points]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerPointConsommation'}}}}
+    responses: {'201': {description: Point créé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-001]
+    x-hydrosea-tables: [des.point_consommation, des.liaison_desserte_consommation]
+point_consommation:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPointConsommation'}]
+  get:
+    operationId: consulter_point_consommation
+    summary: Consulter un Point de consommation
+    description: Retourne le Point et ses références patrimoniales.
+    tags: [Points]
+    security: [{oauth2: ['comptage:lecture']}]
+    responses: {'200': {description: Point trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-001]
+    x-hydrosea-tables: [des.point_consommation]
+  patch:
+    operationId: modifier_point_consommation
+    summary: Modifier un Point de consommation
+    description: Modifie uniquement les attributs non patrimoniaux autorisés.
+    tags: [Points]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ModifierPointConsommation'}}}}
+    responses: {'200': {description: Point modifié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-TRV-001]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-005]
+    x-hydrosea-tables: [des.point_consommation]
+ouvrir:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPointConsommation'}]
+  post:
+    operationId: ouvrir_point_consommation
+    summary: Ouvrir un Point de consommation
+    description: Fait passer le Point préparé à l’état ouvert.
+    tags: [Points]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Point ouvert, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-TRV-004]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-002]
+    x-hydrosea-tables: [des.point_consommation]
+fermer:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPointConsommation'}]
+  post:
+    operationId: fermer_point_consommation
+    summary: Fermer un Point de consommation
+    description: Ferme le Point selon une décision métier explicite.
+    tags: [Points]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Point fermé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-TRV-004]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-007]
+    x-hydrosea-tables: [des.point_consommation]
+reouvrir:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPointConsommation'}]
+  post:
+    operationId: reouvrir_point_consommation
+    summary: Réouvrir un Point de consommation
+    description: Réouvre le Point lorsque la transition est autorisée ; le cycle définitif reste à arbitrer.
+    tags: [Points]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    responses: {'200': {description: Point réouvert, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PointConsommation'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-TRV-004]
+    x-hydrosea-rm: [RM-PC]
+    x-hydrosea-evt: [EVT-PC-004]
+    x-hydrosea-tables: [des.point_consommation]
