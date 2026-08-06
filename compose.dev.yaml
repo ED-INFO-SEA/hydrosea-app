@@ -1,0 +1,34 @@
+name: hydrosea-app
+services:
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_URL: jdbc:postgresql://postgres:5432/hydrosea
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/hydrosea/protocol/openid-connect/certs
+      RABBITMQ_HOST: rabbitmq
+      MINIO_URL: http://minio:9000
+    ports: ['127.0.0.1:8080:8080']
+    networks: [base_donnees,messagerie,stockage,identite]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+  frontend:
+    build: ./frontend
+    environment:
+      VITE_API_URL: http://localhost:8080
+      VITE_KEYCLOAK_URL: http://auth.hydrosea.local
+      VITE_KEYCLOAK_REALM: hydrosea
+      VITE_KEYCLOAK_CLIENT: hydrosea-web
+    ports: ['127.0.0.1:5173:5173']
+    depends_on: [backend]
+    networks: [frontal]
+    security_opt: [no-new-privileges:true]
+networks:
+  base_donnees: {external: true, name: hydrosea_base_donnees}
+  messagerie: {external: true, name: hydrosea_messagerie}
+  stockage: {external: true, name: hydrosea_stockage}
+  identite: {external: true, name: hydrosea_identite}
+  frontal: {external: true, name: hydrosea_frontal}
