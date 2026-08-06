@@ -21,8 +21,10 @@ public class GestionnaireErreursApi {
   ResponseEntity<ErreurApi> invalide(Exception e) { return reponse("API-REQUETE-INVALIDE","Requête invalide",e.getMessage(),HttpStatus.BAD_REQUEST); }
   @ExceptionHandler(TiersAbsentException.class)
   ResponseEntity<ErreurApi> absent(Exception e) { return reponse("TIE-ABSENT","Tiers absent",e.getMessage(),HttpStatus.NOT_FOUND); }
-  @ExceptionHandler({ConflitIdempotenceException.class,DoublonProbableException.class})
-  ResponseEntity<ErreurApi> conflit(Exception e) { return reponse("TIE-CONFLIT","Conflit métier",e.getMessage(),HttpStatus.CONFLICT); }
+  @ExceptionHandler(ConflitIdempotenceException.class)
+  ResponseEntity<ErreurApi> idempotence(Exception e) { return reponse("SYS-CLE-IDEMPOTENCE-CONFLIT","Clé d’idempotence en conflit",e.getMessage(),HttpStatus.CONFLICT); }
+  @ExceptionHandler(DoublonProbableException.class)
+  ResponseEntity<ErreurApi> doublon(Exception e) { return reponse("TIE-DOUBLON-CERTAIN","Doublon de Tiers",e.getMessage(),HttpStatus.CONFLICT); }
   @ExceptionHandler(VersionObsoleteException.class)
   ResponseEntity<ErreurApi> version(Exception e) { return reponse("SYS-CONFLIT-VERSION","Version obsolète",e.getMessage(),HttpStatus.PRECONDITION_FAILED); }
   @ExceptionHandler(AuthorizationDeniedException.class)

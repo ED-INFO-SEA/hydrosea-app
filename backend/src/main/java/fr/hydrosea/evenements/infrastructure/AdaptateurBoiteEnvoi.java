@@ -47,7 +47,7 @@ public class AdaptateurBoiteEnvoi implements PortEvenements {
     List<MessageSortant> messages = jdbc.query("""
         SELECT b.id,e.type_evenement,e.correlation_id,e.charge::text FROM evt.boite_envoi b
         JOIN evt.evenement_metier e ON e.id=b.evenement_metier_id
-        WHERE b.statut='A_PUBLIER' AND b.disponible_le<=now() ORDER BY b.disponible_le
+        WHERE b.statut='A_PUBLIER' AND b.date_disponibilite<=now() ORDER BY b.date_disponibilite
         FOR UPDATE OF b SKIP LOCKED LIMIT 20
         """, (rs, n) -> new MessageSortant(rs.getObject(1, UUID.class), rs.getString(2),
             rs.getObject(3, UUID.class), rs.getString(4)));
@@ -60,10 +60,10 @@ public class AdaptateurBoiteEnvoi implements PortEvenements {
           m.getMessageProperties().setContentType("application/json");
           return m;
         });
-        jdbc.update("UPDATE evt.boite_envoi SET statut='PUBLIE',publie_le=now(),tentatives=tentatives+1,erreur=NULL WHERE id=?", message.id);
+        jdbc.update("UPDATE evt.boite_envoi SET statut='PUBLIE',date_publication=now(),tentatives=tentatives+1,erreur=NULL WHERE id=?", message.id);
         succes.increment();
       } catch (RuntimeException exception) {
-        jdbc.update("UPDATE evt.boite_envoi SET tentatives=tentatives+1,disponible_le=now()+interval '1 minute',statut=CASE WHEN tentatives>=4 THEN 'ERREUR' ELSE 'A_PUBLIER' END,erreur=? WHERE id=?",
+        jdbc.update("UPDATE evt.boite_envoi SET tentatives=tentatives+1,date_disponibilite=now()+interval '1 minute',statut=CASE WHEN tentatives>=4 THEN 'ERREUR' ELSE 'A_PUBLIER' END,erreur=? WHERE id=?",
             exception.getClass().getSimpleName(), message.id);
         echecs.increment();
       }
@@ -76,4 +76,3 @@ public class AdaptateurBoiteEnvoi implements PortEvenements {
   }
   private record MessageSortant(UUID id, String type, UUID correlation, String charge) {}
 }
-

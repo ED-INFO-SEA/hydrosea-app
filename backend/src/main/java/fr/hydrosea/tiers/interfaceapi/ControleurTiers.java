@@ -16,6 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,12 +42,16 @@ public class ControleurTiers {
   }
   @PostMapping
   @PreAuthorize("hasAuthority('SCOPE_tiers:ecriture')")
-  public ResponseEntity<VueTiers> creer(@RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody CreerTiers requete) {
+  public ResponseEntity<VueTiers> creer(@RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody CreerTiers requete,
+      Authentication authentification) {
     UUID correlation=FiltreCorrelation.courante();
-    var resultat=idempotence.executer(cle,"CREER_TIERS","/v1/tiers",requete,correlation,VueTiers.class,HttpStatus.CREATED,
-        () -> VueTiers.depuis(service.creer(requete.commande(),correlation)));
-    return ResponseEntity.status(resultat.statut()).location(URI.create("/v1/tiers/"+resultat.corps().identifiantTiers()))
-        .eTag(etag(resultat.corps().version())).body(resultat.corps());
+    var resultat=idempotence.executer(authentification.getName(),cle,"CREER_TIERS","/v1/tiers",requete,VueTiers.class,
+        () -> {
+          VueTiers vue=VueTiers.depuis(service.creer(requete.commande(),correlation));
+          return ResponseEntity.status(HttpStatus.CREATED).location(URI.create("/v1/tiers/"+vue.identifiantTiers()))
+              .eTag(etag(vue.version())).header("X-Correlation-Id",correlation.toString()).body(vue);
+        });
+    return resultat.enReponseHttp();
   }
   @GetMapping("/{identifiant}")
   @PreAuthorize("hasAuthority('SCOPE_tiers:lecture')")
@@ -64,11 +69,14 @@ public class ControleurTiers {
   @PostMapping("/{identifiant}/archiver")
   @PreAuthorize("hasAuthority('SCOPE_tiers:ecriture')")
   public ResponseEntity<VueTiers> archiver(@PathVariable UUID identifiant,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
-      @RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody ArchiverTiers requete) {
+      @RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody ArchiverTiers requete, Authentication authentification) {
     UUID correlation=FiltreCorrelation.courante(); String uri="/v1/tiers/"+identifiant+"/archiver";
-    var resultat=idempotence.executer(cle,"ARCHIVER_TIERS",uri,requete,correlation,VueTiers.class,HttpStatus.OK,
-        () -> VueTiers.depuis(service.archiver(identifiant,version(ifMatch),correlation)));
-    return ResponseEntity.status(resultat.statut()).eTag(etag(resultat.corps().version())).body(resultat.corps());
+    var resultat=idempotence.executer(authentification.getName(),cle,"ARCHIVER_TIERS",uri,requete,VueTiers.class,
+        () -> {
+          VueTiers vue=VueTiers.depuis(service.archiver(identifiant,version(ifMatch),correlation));
+          return ResponseEntity.ok().eTag(etag(vue.version())).header("X-Correlation-Id",correlation.toString()).body(vue);
+        });
+    return resultat.enReponseHttp();
   }
   private static int version(String valeur) {
     if (valeur==null || !valeur.matches("\"[1-9][0-9]*\"")) throw new IllegalArgumentException("If-Match doit contenir une version entre guillemets.");

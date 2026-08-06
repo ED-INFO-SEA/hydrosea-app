@@ -1,6 +1,7 @@
 package fr.hydrosea.tiers.infrastructure;
 
 import fr.hydrosea.tiers.application.PortTiers;
+import fr.hydrosea.tiers.application.ResultatDetectionDoublon;
 import fr.hydrosea.tiers.application.VersionObsoleteException;
 import fr.hydrosea.tiers.domaine.CategorieTiers;
 import fr.hydrosea.tiers.domaine.PersonneMorale;
@@ -93,15 +94,35 @@ public class AdaptateurJdbcTiers implements PortTiers {
   }
 
   @Override
-  public boolean doublonProbable(Tiers tiers) {
+  public ResultatDetectionDoublon detecterDoublon(Tiers tiers) {
     if (tiers.personnePhysique() != null) {
-      Integer n = jdbc.queryForObject("SELECT count(*) FROM ref.tiers_personne_physique WHERE lower(nom)=lower(?) AND lower(prenoms)=lower(?) AND date_naissance IS NOT DISTINCT FROM ?",
-          Integer.class, tiers.personnePhysique().nom(), tiers.personnePhysique().prenoms(), tiers.personnePhysique().dateNaissance());
-      return n != null && n > 0;
+      List<UUID> candidats = jdbc.query("""
+          SELECT p.tiers_id FROM ref.tiers_personne_physique p JOIN ref.tiers t ON t.id=p.tiers_id
+          WHERE t.statut='ACTIF' AND lower(regexp_replace(trim(p.nom),'\\s+',' ','g'))=lower(regexp_replace(trim(?),'\\s+',' ','g'))
+          AND lower(regexp_replace(trim(p.prenoms),'\\s+',' ','g'))=lower(regexp_replace(trim(?),'\\s+',' ','g'))
+          AND p.date_naissance IS NOT DISTINCT FROM ?
+          """, (rs, n) -> rs.getObject(1, UUID.class), tiers.personnePhysique().nom(),
+          tiers.personnePhysique().prenoms(), tiers.personnePhysique().dateNaissance());
+      return candidats.isEmpty() ? ResultatDetectionDoublon.aucun()
+          : new ResultatDetectionDoublon(ResultatDetectionDoublon.Niveau.CERTAIN, true,
+              "Identité civile normalisée et date de naissance identiques parmi les Tiers actifs.", candidats);
     }
-    Integer n = jdbc.queryForObject("SELECT count(*) FROM ref.tiers_personne_morale WHERE (siret IS NOT NULL AND siret=?) OR lower(raison_sociale)=lower(?)",
-        Integer.class, tiers.personneMorale().siret(), tiers.personneMorale().raisonSociale());
-    return n != null && n > 0;
+    PersonneMorale morale = tiers.personneMorale();
+    if (morale.siret() != null) {
+      List<UUID> siret = jdbc.query("""
+          SELECT m.tiers_id FROM ref.tiers_personne_morale m WHERE m.siret=?
+          """, (rs, n) -> rs.getObject(1, UUID.class), morale.siret());
+      if (!siret.isEmpty()) return new ResultatDetectionDoublon(ResultatDetectionDoublon.Niveau.CERTAIN, true,
+          "SIRET identique parmi les Tiers actifs ou archivés.", siret);
+    }
+    List<UUID> homonymes = jdbc.query("""
+        SELECT m.tiers_id FROM ref.tiers_personne_morale m JOIN ref.tiers t ON t.id=m.tiers_id
+        WHERE t.statut='ACTIF' AND lower(regexp_replace(trim(m.raison_sociale),'\\s+',' ','g'))=
+          lower(regexp_replace(trim(?),'\\s+',' ','g'))
+        """, (rs, n) -> rs.getObject(1, UUID.class), morale.raisonSociale());
+    return homonymes.isEmpty() ? ResultatDetectionDoublon.aucun()
+        : new ResultatDetectionDoublon(ResultatDetectionDoublon.Niveau.SIGNAL, false,
+            "Raison sociale normalisée homonyme sans identité SIRET certaine.", homonymes);
   }
 
   private Tiers mapper(ResultSet rs, int ligne) throws SQLException {

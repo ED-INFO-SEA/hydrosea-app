@@ -23,11 +23,11 @@ public class ServiceTiers {
   }
 
   @Transactional
-  public Tiers creer(CommandesTiers.Creer commande, UUID correlation) {
-    CategorieTiers categorie = CategorieTiers.valueOf(commande.categorie());
-    Tiers candidat = new Tiers(UUID.randomUUID(), null, categorie, StatutTiers.ACTIF,
+  public Tiers creer(CommandeCreerTiers commande, UUID correlation) {
+    Tiers candidat = new Tiers(UUID.randomUUID(), null, commande.categorie(), StatutTiers.ACTIF,
         commande.personnePhysique(), commande.personneMorale(), 1, Instant.now(), Instant.now());
-    if (port.doublonProbable(candidat)) throw new DoublonProbableException();
+    ResultatDetectionDoublon doublon = port.detecterDoublon(candidat);
+    if (doublon.bloquant()) throw new DoublonProbableException(doublon);
     Tiers cree = port.creer(candidat);
     evenements.enregistrer("TIERS_CREE", "TIERS", cree.identifiant(), correlation,
         Map.of("identifiant_tiers", cree.identifiant(), "reference", cree.reference(), "categorie", cree.categorie()));
@@ -46,7 +46,7 @@ public class ServiceTiers {
   }
 
   @Transactional
-  public Tiers modifier(UUID identifiant, CommandesTiers.Modifier commande, int version, UUID correlation) {
+  public Tiers modifier(UUID identifiant, CommandeModifierTiers commande, int version, UUID correlation) {
     Tiers actuel = consulter(identifiant);
     if ((actuel.categorie() == CategorieTiers.PERSONNE_PHYSIQUE && commande.personneMorale() != null)
         || (actuel.categorie() == CategorieTiers.PERSONNE_MORALE && commande.personnePhysique() != null)) {

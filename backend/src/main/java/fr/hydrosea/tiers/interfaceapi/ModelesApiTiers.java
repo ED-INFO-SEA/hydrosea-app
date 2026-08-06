@@ -1,13 +1,17 @@
 package fr.hydrosea.tiers.interfaceapi;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import fr.hydrosea.tiers.application.CommandesTiers;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import fr.hydrosea.tiers.application.CommandeCreerTiers;
+import fr.hydrosea.tiers.application.CommandeModifierTiers;
+import fr.hydrosea.tiers.domaine.CategorieTiers;
 import fr.hydrosea.tiers.domaine.PersonneMorale;
 import fr.hydrosea.tiers.domaine.PersonnePhysique;
 import fr.hydrosea.tiers.domaine.Tiers;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.AssertTrue;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -23,19 +27,27 @@ public final class ModelesApiTiers {
       @Pattern(regexp="[0-9]{14}") String siret, String formeJuridique) {
     PersonneMorale domaine() { return new PersonneMorale(raisonSociale, siret, formeJuridique); }
   }
-  public record CreerTiers(@NotBlank String categorie, @Valid PersonnePhysiqueCommande personnePhysique,
+  public record CreerTiers(@NotBlank @Pattern(regexp="PERSONNE_PHYSIQUE|PERSONNE_MORALE") String categorie,
+      @Valid PersonnePhysiqueCommande personnePhysique,
       @Valid PersonneMoraleCommande personneMorale) {
-    CommandesTiers.Creer commande() {
-      return new CommandesTiers.Creer(categorie, personnePhysique == null ? null : personnePhysique.domaine(),
+    CommandeCreerTiers commande() {
+      return new CommandeCreerTiers(CategorieTiers.valueOf(categorie), personnePhysique == null ? null : personnePhysique.domaine(),
           personneMorale == null ? null : personneMorale.domaine());
+    }
+    @JsonIgnore @AssertTrue(message="La catégorie exige exactement sa spécialisation complète.")
+    public boolean isSpecialisationValide() {
+      return ("PERSONNE_PHYSIQUE".equals(categorie) && personnePhysique != null && personneMorale == null)
+          || ("PERSONNE_MORALE".equals(categorie) && personneMorale != null && personnePhysique == null);
     }
   }
   public record ModifierTiers(@Valid PersonnePhysiqueCommande personnePhysique,
       @Valid PersonneMoraleCommande personneMorale) {
-    CommandesTiers.Modifier commande() {
-      return new CommandesTiers.Modifier(personnePhysique == null ? null : personnePhysique.domaine(),
+    CommandeModifierTiers commande() {
+      return new CommandeModifierTiers(personnePhysique == null ? null : personnePhysique.domaine(),
           personneMorale == null ? null : personneMorale.domaine());
     }
+    @JsonIgnore @AssertTrue(message="Le PATCH exige exactement une spécialisation complète.")
+    public boolean isSpecialisationValide() { return (personnePhysique == null) != (personneMorale == null); }
   }
   public record ArchiverTiers(@NotBlank String motif) {}
   public record PersonnePhysiqueVue(String nom,String nomUsage,String prenoms) {}
@@ -57,4 +69,3 @@ public final class ModelesApiTiers {
     }
   }
 }
-

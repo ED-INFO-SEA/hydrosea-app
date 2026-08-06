@@ -12,5 +12,5 @@ public interface PortTiers {
   Optional<Tiers> trouver(UUID identifiant);
   Page<Tiers> rechercher(String recherche, String reference, CategorieTiers categorie, String statut, Pageable page);
   Tiers mettreAJour(Tiers tiers, int versionAttendue);
-  boolean doublonProbable(Tiers tiers);
+  ResultatDetectionDoublon detecterDoublon(Tiers tiers);
 }
