@@ -31,6 +31,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
@@ -123,7 +125,7 @@ class ParcoursTiersIT {
     UUID correlation=UUID.randomUUID();
     var tiers=service.creer(new CommandeCreerTiers(CategorieTiers.PERSONNE_PHYSIQUE,
         new PersonnePhysique("Immuable",null,"Cle",null),null),correlation);
-    org.junit.jupiter.api.Assertions.assertThrows(org.springframework.dao.DataIntegrityViolationException.class,
+    org.junit.jupiter.api.Assertions.assertThrows(org.springframework.dao.DataAccessException.class,
         ()->jdbc.update("UPDATE ref.tiers_personne_physique SET tiers_id=? WHERE tiers_id=?",UUID.randomUUID(),tiers.identifiant()));
   }
 
@@ -145,10 +147,16 @@ class ParcoursTiersIT {
     UUID correlation=UUID.randomUUID();
     var tiers=service.creer(new CommandeCreerTiers(CategorieTiers.PERSONNE_PHYSIQUE,
         new PersonnePhysique("Archive",null,UUID.randomUUID().toString(),null),null),correlation);
-    var authentification=new UsernamePasswordAuthenticationToken("sujet-archive","secret");
-    var premiere=controleur.archiver(tiers.identifiant(),"\"1\"","cle-archive-test",new ArchiverTiers("test"),authentification);
-    var rejeu=controleur.archiver(tiers.identifiant(),"\"1\"","cle-archive-test",new ArchiverTiers("test"),authentification);
-    assertThat(rejeu.getBody()).isEqualTo(premiere.getBody());
-    assertThat(rejeu.getHeaders()).containsEntry("ETag",premiere.getHeaders().get("ETag"));
+    var authentification=new UsernamePasswordAuthenticationToken("sujet-archive","secret",
+        List.of(new SimpleGrantedAuthority("SCOPE_tiers:ecriture")));
+    SecurityContextHolder.getContext().setAuthentication(authentification);
+    try {
+      var premiere=controleur.archiver(tiers.identifiant(),"\"1\"","cle-archive-test",new ArchiverTiers("test"),authentification);
+      var rejeu=controleur.archiver(tiers.identifiant(),"\"1\"","cle-archive-test",new ArchiverTiers("test"),authentification);
+      assertThat(rejeu.getBody()).isEqualTo(premiere.getBody());
+      assertThat(rejeu.getHeaders()).containsEntry("ETag",premiere.getHeaders().get("ETag"));
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
   }
 }
