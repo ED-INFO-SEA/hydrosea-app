@@ -16,6 +16,8 @@ jobs:
         working-directory: frontend
         run: npm ci
       - name: Synchroniser et générer le contrat
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           sh scripts/synchroniser-openapi.sh --version "$(cat api/VERSION)"
           cd frontend && npm run generate:api

@@ -9,7 +9,11 @@ if [ "$1" = '--version' ]; then
   [ "$#" -eq 2 ] || usage
   temp=$(mktemp -d)
   trap 'rm -rf "$temp"' EXIT
-  git clone --quiet --filter=blob:none --no-checkout https://github.com/ED-INFO-SEA/hydrosea-platform.git "$temp/depot"
+  if [ -n "${GH_TOKEN:-}" ] && command -v gh >/dev/null 2>&1; then
+    gh repo clone ED-INFO-SEA/hydrosea-platform "$temp/depot" -- --quiet --filter=blob:none --no-checkout
+  else
+    git clone --quiet --filter=blob:none --no-checkout https://github.com/ED-INFO-SEA/hydrosea-platform.git "$temp/depot"
+  fi
   git -C "$temp/depot" sparse-checkout set api
   git -C "$temp/depot" checkout --quiet "$2"
   source_api="$temp/depot/api"
@@ -22,4 +26,3 @@ rm -rf "$destination"
 mkdir -p "$destination"
 cp -R "$source_api"/. "$destination"/
 echo "Contrat OpenAPI synchronisé depuis $source_api"
-

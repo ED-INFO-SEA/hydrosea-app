@@ -3,10 +3,12 @@ package fr.hydrosea.architecture;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.Test;
 
 class ArchitectureModulaireTest {
-  private final com.tngtech.archunit.core.domain.JavaClasses classes=new ClassFileImporter().importPackages("fr.hydrosea");
+  private final com.tngtech.archunit.core.domain.JavaClasses classes=new ClassFileImporter()
+      .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS).importPackages("fr.hydrosea");
   @Test void domaine_independant_des_cadres_techniques() {
     noClasses().that().resideInAPackage("..domaine..").should().dependOnClassesThat()
         .resideInAnyPackage("org.springframework..","jakarta.persistence..","io.minio..").check(classes);
@@ -19,4 +21,3 @@ class ArchitectureModulaireTest {
     classes().that().haveSimpleNameStartingWith("Adaptateur").should().resideInAPackage("..infrastructure..").check(classes);
   }
 }
-

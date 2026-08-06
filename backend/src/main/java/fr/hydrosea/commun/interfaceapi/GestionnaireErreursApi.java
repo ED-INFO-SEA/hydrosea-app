@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +25,8 @@ public class GestionnaireErreursApi {
   ResponseEntity<ErreurApi> conflit(Exception e) { return reponse("TIE-CONFLIT","Conflit métier",e.getMessage(),HttpStatus.CONFLICT); }
   @ExceptionHandler(VersionObsoleteException.class)
   ResponseEntity<ErreurApi> version(Exception e) { return reponse("SYS-CONFLIT-VERSION","Version obsolète",e.getMessage(),HttpStatus.PRECONDITION_FAILED); }
+  @ExceptionHandler(AuthorizationDeniedException.class)
+  ResponseEntity<ErreurApi> interdit(Exception e) { return reponse("API-AUTORISATION","Droit insuffisant","La portée requise est absente.",HttpStatus.FORBIDDEN); }
   @ExceptionHandler(Exception.class)
   ResponseEntity<ErreurApi> interne(Exception e) {
     LOGGER.error("Erreur interne corrélée",e);
@@ -33,4 +36,3 @@ public class GestionnaireErreursApi {
     return ResponseEntity.status(statut).body(ErreurApi.creer(code,titre,detail,statut.value()));
   }
 }
-
