@@ -1,0 +1,21 @@
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: OAuth2 avec JWT ; les URL définitives dépendent du fournisseur d’identité.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.hydrosea.fr/oauth2/token
+          scopes:
+            tiers:lecture: Lire les Tiers
+            tiers:ecriture: Écrire les Tiers
+            contrats:lecture: Lire les contrats
+            contrats:ecriture: Écrire les contrats
+            comptage:lecture: Lire les points, compteurs et relèves
+            comptage:ecriture: Écrire les points, compteurs et relèves
+            facturation:lecture: Lire les factures
+            facturation:ecriture: Commander la facturation
+            paiements:lecture: Lire les paiements
+            paiements:ecriture: Écrire les paiements et imputations
+            audit:lecture: Lire les événements minimisés
+            administration: Administrer les fonctions techniques autorisées

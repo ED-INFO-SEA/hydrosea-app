@@ -1,0 +1,6 @@
+imputation:
+  summary: Imputation sur deux factures
+  value:
+    imputations:
+      - {identifiant_facture: 99999999-9999-4999-8999-999999999999, montant: 42.6}
+      - {identifiant_facture: dddddddd-dddd-4ddd-8ddd-dddddddddddd, montant: 27.4}

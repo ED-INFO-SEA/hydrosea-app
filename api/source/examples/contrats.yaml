@@ -1,0 +1,13 @@
+ouverture:
+  summary: Ouverture d’un contrat
+  value:
+    date_effet: '2026-09-01T00:00:00Z'
+    identifiant_point_consommation: 44444444-4444-4444-8444-444444444444
+    participants:
+      - {identifiant_tiers: 11111111-1111-4111-8111-111111111111, role_contractuel: TITULAIRE, principal: true, date_debut_validite: '2026-09-01T00:00:00Z'}
+mutation:
+  summary: Mutation vers un nouveau titulaire
+  value:
+    identifiant_tiers_entrant: 55555555-5555-4555-8555-555555555555
+    date_mutation: '2026-10-01T08:00:00Z'
+    index_sortie: 512.75

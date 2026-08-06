@@ -1,0 +1,4 @@
+src/api/genere/
+dist/
+coverage/
+package-lock.json

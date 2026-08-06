@@ -1,0 +1,139 @@
+:root {
+  font-family: Inter, system-ui, sans-serif;
+  color: #17324d;
+  background: #f4f7f8;
+  line-height: 1.5;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  border: 0;
+  border-radius: 0.4rem;
+  background: #006b68;
+  color: white;
+  padding: 0.65rem 1rem;
+  cursor: pointer;
+}
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid #f0a202;
+  outline-offset: 2px;
+}
+.secondaire {
+  background: #40566b;
+}
+.danger {
+  background: #a12622;
+}
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 5vw;
+  background: white;
+  border-bottom: 1px solid #d8e1e5;
+}
+nav {
+  display: flex;
+  gap: 0.7rem;
+}
+main {
+  max-width: 72rem;
+  margin: auto;
+  padding: 2rem 5vw;
+}
+section,
+article {
+  background: white;
+  border-radius: 0.7rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px #17324d10;
+}
+.connexion {
+  text-align: center;
+  margin-top: 15vh;
+}
+.recherche {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+}
+.recherche label {
+  grid-column: 1/-1;
+}
+.recherche input,
+.formulaire input {
+  padding: 0.65rem;
+  border: 1px solid #8799a5;
+  border-radius: 0.35rem;
+}
+.grille {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) 2fr;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+.liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.liste button {
+  width: 100%;
+  display: grid;
+  text-align: left;
+  background: #edf4f4;
+  color: #17324d;
+  margin-bottom: 0.4rem;
+}
+.liste span,
+.liste small {
+  display: block;
+}
+.formulaire {
+  display: grid;
+  gap: 1rem;
+  max-width: 34rem;
+}
+.formulaire label {
+  display: grid;
+  gap: 0.3rem;
+}
+.formulaire fieldset {
+  display: flex;
+  gap: 1rem;
+  border: 1px solid #bbc8ce;
+}
+.formulaire fieldset label {
+  display: flex;
+}
+.erreur {
+  padding: 1rem;
+  background: #fde8e7;
+  border-left: 5px solid #a12622;
+  margin-bottom: 1rem;
+}
+@media (max-width: 700px) {
+  header,
+  .grille {
+    display: block;
+  }
+  nav {
+    margin-top: 1rem;
+  }
+  .recherche {
+    grid-template-columns: 1fr;
+  }
+  .recherche label {
+    grid-column: auto;
+  }
+}

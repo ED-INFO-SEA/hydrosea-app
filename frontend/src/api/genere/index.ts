@@ -1,0 +1,78 @@
+/* generated using openapi-typescript-codegen -- do not edit */
+/* istanbul ignore file */
+/* tslint:disable */
+/* eslint-disable */
+export { ApiError } from './core/ApiError';
+export { CancelablePromise, CancelError } from './core/CancelablePromise';
+export { OpenAPI } from './core/OpenAPI';
+export type { OpenAPIConfig } from './core/OpenAPI';
+
+export type { Adresse } from './models/Adresse';
+export type { AffectationCompteur } from './models/AffectationCompteur';
+export type { BilanImportReleves } from './models/BilanImportReleves';
+export type { CalculerFacture } from './models/CalculerFacture';
+export type { Compteur } from './models/Compteur';
+export type { ContratAbonnement } from './models/ContratAbonnement';
+export type { Coordonnee } from './models/Coordonnee';
+export type { CorrigerReleve } from './models/CorrigerReleve';
+export type { CreerAffectationCompteur } from './models/CreerAffectationCompteur';
+export type { CreerCompteur } from './models/CreerCompteur';
+export type { CreerContratAbonnement } from './models/CreerContratAbonnement';
+export { CreerPaiement } from './models/CreerPaiement';
+export type { CreerParticipationContrat } from './models/CreerParticipationContrat';
+export type { CreerPointConsommation } from './models/CreerPointConsommation';
+export type { CreerReleve } from './models/CreerReleve';
+export type { CreerTiers } from './models/CreerTiers';
+export type { CreerTiersPersonneMorale } from './models/CreerTiersPersonneMorale';
+export type { CreerTiersPersonnePhysique } from './models/CreerTiersPersonnePhysique';
+export type { ErreurApi } from './models/ErreurApi';
+export type { EvenementMetier } from './models/EvenementMetier';
+export { Facture } from './models/Facture';
+export type { IdempotencyKey } from './models/IdempotencyKey';
+export type { IdentifiantAffectation } from './models/IdentifiantAffectation';
+export type { IdentifiantCompteur } from './models/IdentifiantCompteur';
+export type { IdentifiantContrat } from './models/IdentifiantContrat';
+export type { IdentifiantFacture } from './models/IdentifiantFacture';
+export type { IdentifiantPaiement } from './models/IdentifiantPaiement';
+export type { IdentifiantParticipation } from './models/IdentifiantParticipation';
+export type { IdentifiantPointConsommation } from './models/IdentifiantPointConsommation';
+export type { IdentifiantPointDesserte } from './models/IdentifiantPointDesserte';
+export type { IdentifiantReleve } from './models/IdentifiantReleve';
+export type { IdentifiantTiers } from './models/IdentifiantTiers';
+export type { IdentiteVersionnee } from './models/IdentiteVersionnee';
+export type { IfMatch } from './models/IfMatch';
+export { ImputationPaiement } from './models/ImputationPaiement';
+export type { ImputerPaiement } from './models/ImputerPaiement';
+export type { LigneFacture } from './models/LigneFacture';
+export type { ModifierCompteur } from './models/ModifierCompteur';
+export type { ModifierContratAbonnement } from './models/ModifierContratAbonnement';
+export type { ModifierPointConsommation } from './models/ModifierPointConsommation';
+export type { ModifierTiers } from './models/ModifierTiers';
+export type { PageAffectationsCompteur } from './models/PageAffectationsCompteur';
+export type { PageCompteurs } from './models/PageCompteurs';
+export type { PageContratsAbonnement } from './models/PageContratsAbonnement';
+export type { PageEvenementsMetier } from './models/PageEvenementsMetier';
+export type { PageFactures } from './models/PageFactures';
+export type { PagePaiements } from './models/PagePaiements';
+export type { PagePointsConsommation } from './models/PagePointsConsommation';
+export type { PagePointsDesserte } from './models/PagePointsDesserte';
+export type { PageReleves } from './models/PageReleves';
+export type { PageTiers } from './models/PageTiers';
+export { Paiement } from './models/Paiement';
+export type { ParticipationContrat } from './models/ParticipationContrat';
+export type { PersonneMorale } from './models/PersonneMorale';
+export type { PersonnePhysique } from './models/PersonnePhysique';
+export { PointConsommation } from './models/PointConsommation';
+export type { PointDesserte } from './models/PointDesserte';
+export type { Releve } from './models/Releve';
+export type { SoclePagination } from './models/SoclePagination';
+export { Tiers } from './models/Tiers';
+export type { XCorrelationId } from './models/XCorrelationId';
+
+export { AuditService } from './services/AuditService';
+export { ComptageService } from './services/ComptageService';
+export { ContratsService } from './services/ContratsService';
+export { FacturationService } from './services/FacturationService';
+export { PaiementsService } from './services/PaiementsService';
+export { PointsService } from './services/PointsService';
+export { TiersService } from './services/TiersService';

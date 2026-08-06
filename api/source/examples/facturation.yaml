@@ -1,0 +1,3 @@
+emission:
+  summary: Émission d’une facture
+  value: {identifiant_facture: 99999999-9999-4999-8999-999999999999, version: 2, numero: FAC-2026-000321, identifiant_contrat: 33333333-3333-4333-8333-333333333333, type_piece: FACTURE, periode_debut: '2026-08-01', periode_fin: '2026-08-31', statut: EMISE, montant_ht: 35.5, montant_taxe: 7.1, montant_ttc: 42.6}

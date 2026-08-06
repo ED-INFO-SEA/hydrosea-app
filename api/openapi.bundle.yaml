@@ -1,0 +1,4619 @@
+openapi: 3.1.0
+info:
+  title: API du noyau HydroSEA
+  version: 1.0.0
+  description: Contrats REST des Services métier du noyau ; les règles restent définies par les RM.
+servers:
+  - url: https://api.example.hydrosea.fr
+    description: URL illustrative, à configurer
+tags:
+  - name: Tiers
+    description: Identités physiques et morales
+  - name: Contrats
+    description: Contrats d’abonnement et participations
+  - name: Points
+    description: Points de desserte et de consommation
+  - name: Comptage
+    description: Compteurs, affectations et relèves
+  - name: Facturation
+    description: Calcul et cycle des factures
+  - name: Paiements
+    description: Paiements, imputations et remboursements
+  - name: Audit
+    description: Lecture minimisée des événements métier
+paths:
+  /v1/tiers:
+    get:
+      operationId: rechercher_tiers
+      summary: Rechercher des Tiers
+      description: Recherche multicritère et détection indicative de doublons ; la décision de fusion reste métier.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: recherche
+          in: query
+          schema:
+            type: string
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: categorie
+          in: query
+          schema:
+            type: string
+            enum:
+              - PERSONNE_PHYSIQUE
+              - PERSONNE_MORALE
+        - name: statut
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page de Tiers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageTiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE
+      x-hydrosea-evt:
+        - EVT-TIE-001
+      x-hydrosea-tables:
+        - ref.tiers
+        - ref.tiers_personne_physique
+        - ref.tiers_personne_morale
+    post:
+      operationId: creer_tiers
+      summary: Créer un Tiers
+      description: Crée atomiquement un Tiers personne physique ou morale et contrôle les doublons probables.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerTiers'
+            examples:
+              personne_physique:
+                $ref: '#/components/examples/personne_physique'
+              personne_morale:
+                $ref: '#/components/examples/personne_morale'
+      responses:
+        '201':
+          description: Tiers créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE-001
+        - RM-TIE-002
+      x-hydrosea-evt:
+        - EVT-TIE-001
+      x-hydrosea-tables:
+        - ref.tiers
+        - ref.tiers_personne_physique
+        - ref.tiers_personne_morale
+  /v1/tiers/{identifiant_tiers}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantTiers'
+    get:
+      operationId: consulter_tiers
+      summary: Consulter un Tiers
+      description: Retourne la représentation autorisée du Tiers sans données internes inutiles.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:lecture
+      parameters:
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Tiers trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE
+      x-hydrosea-evt:
+        - EVT-TIE-002
+      x-hydrosea-tables:
+        - ref.tiers
+    patch:
+      operationId: modifier_tiers
+      summary: Modifier un Tiers
+      description: Modifie les attributs autorisés selon la version attendue ; schéma PATCH spécifique à finaliser avec l’application.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierTiers'
+      responses:
+        '200':
+          description: Tiers modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE
+      x-hydrosea-evt:
+        - EVT-TIE-002
+      x-hydrosea-tables:
+        - ref.tiers
+        - ref.tiers_personne_physique
+        - ref.tiers_personne_morale
+  /v1/tiers/{identifiant_tiers}/fusionner:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantTiers'
+    post:
+      operationId: fusionner_tiers
+      summary: Fusionner deux Tiers
+      description: Conserve le Tiers cible et archive le doublon selon RM-TIE ; la sélection automatique du survivant n’est pas définie.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifiant_tiers_conserve
+                - motif
+              properties:
+                identifiant_tiers_conserve:
+                  type: string
+                  format: uuid
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Tiers conservé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE-004
+      x-hydrosea-evt:
+        - EVT-TIE-003
+      x-hydrosea-tables:
+        - ref.tiers
+  /v1/tiers/{identifiant_tiers}/archiver:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantTiers'
+    post:
+      operationId: archiver_tiers
+      summary: Archiver un Tiers
+      description: Archive le Tiers lorsque les dépendances métier l’autorisent.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - motif
+              properties:
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Tiers archivé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE
+      x-hydrosea-evt:
+        - EVT-TIE-004
+      x-hydrosea-tables:
+        - ref.tiers
+  /v1/tiers/{identifiant_tiers}/reactiver:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantTiers'
+    post:
+      operationId: reactiver_tiers
+      summary: Réactiver un Tiers
+      description: Réactive un Tiers archivé lorsque la règle métier l’autorise.
+      tags:
+        - Tiers
+      security:
+        - oauth2:
+            - tiers:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Tiers réactivé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tiers'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_TIERS
+      x-hydrosea-rm:
+        - RM-TIE
+      x-hydrosea-evt:
+        - EVT-TIE-005
+      x-hydrosea-tables:
+        - ref.tiers
+  /v1/contrats-abonnement:
+    get:
+      operationId: rechercher_contrats_abonnement
+      summary: Rechercher des contrats d’abonnement
+      description: Recherche paginée par référence, statut, Tiers ou Point de consommation.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+        - name: statut
+          in: query
+          schema:
+            type: string
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: identifiant_tiers
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: identifiant_point_consommation
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Page de contrats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageContratsAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-001
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-001
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+    post:
+      operationId: creer_contrat_abonnement
+      summary: Créer un contrat d’abonnement
+      description: Crée un brouillon relié à un Point de consommation et à ses participants initiaux.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerContratAbonnement'
+            examples:
+              ouverture:
+                $ref: '#/components/examples/ouverture'
+      responses:
+        '201':
+          description: Brouillon créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-001
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-001
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.liaison_contrat_consommation
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    get:
+      operationId: consulter_contrat_abonnement
+      summary: Consulter un contrat d’abonnement
+      description: Retourne le contrat, son Point de consommation et ses participants autorisés.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:lecture
+      responses:
+        '200':
+          description: Contrat trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-001
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-002
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+    patch:
+      operationId: modifier_contrat_abonnement
+      summary: Modifier un contrat d’abonnement
+      description: Modifie les données autorisées avant ou pendant le cycle du contrat, sans commander une transition.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierContratAbonnement'
+      responses:
+        '200':
+          description: Contrat modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-010
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+  /v1/contrats-abonnement/{identifiant_contrat}/valider:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: valider_contrat_abonnement
+      summary: Valider un contrat d’abonnement
+      description: Vérifie les préconditions métier avant activation ; les contrôles restent définis par RM-CTR.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Contrat validé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-002
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}/activer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: activer_contrat_abonnement
+      summary: Activer un contrat d’abonnement
+      description: Active un contrat validé à sa date d’effet avec un titulaire principal.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Contrat actif
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-003
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}/suspendre:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: suspendre_contrat_abonnement
+      summary: Suspendre un contrat d’abonnement
+      description: Suspend le contrat selon le motif et la date d’effet fournis.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - motif
+              properties:
+                motif:
+                  type: string
+                date_effet:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Contrat suspendu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-005
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-004
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+  /v1/contrats-abonnement/{identifiant_contrat}/reactiver:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: reactiver_contrat_abonnement
+      summary: Réactiver un contrat d’abonnement
+      description: Réactive un contrat suspendu lorsque la transition est autorisée.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Contrat réactivé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-005
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-005
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+  /v1/contrats-abonnement/{identifiant_contrat}/resilier:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: resilier_contrat_abonnement
+      summary: Résilier un contrat d’abonnement
+      description: Enregistre la date et le motif de résiliation sans supprimer l’historique.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date_resiliation
+                - motif
+              properties:
+                date_resiliation:
+                  type: string
+                  format: date-time
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Contrat résilié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-003
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-007
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}/muter:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: muter_contrat_abonnement
+      summary: Muter un contrat d’abonnement
+      description: Clôture le contrat sortant et prépare le contrat entrant ; les règles de reprise sont définies par BS-CTR-004.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifiant_tiers_entrant
+                - date_mutation
+              properties:
+                identifiant_tiers_entrant:
+                  type: string
+                  format: uuid
+                date_mutation:
+                  type: string
+                  format: date-time
+                index_sortie:
+                  type: number
+                  minimum: 0
+            examples:
+              mutation:
+                $ref: '#/components/examples/mutation'
+      responses:
+        '201':
+          description: Contrat entrant créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-004
+      x-hydrosea-rm:
+        - RM-CTR
+      x-hydrosea-evt:
+        - EVT-CTR-006
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+        - abo.liaison_contrat_consommation
+  /v1/contrats-abonnement/{identifiant_contrat}/participants:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: ajouter_participant_contrat
+      summary: Ajouter un participant au contrat
+      description: Ajoute un rôle contractuel historisé.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerParticipationContrat'
+      responses:
+        '201':
+          description: Participant ajouté
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipationContrat'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-008
+      x-hydrosea-tables:
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+      - $ref: '#/components/parameters/IdentifiantParticipation'
+    patch:
+      operationId: modifier_participant_contrat
+      summary: Modifier un participant au contrat
+      description: Modifie les attributs autorisés d’une participation selon sa version.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                principal:
+                  type: boolean
+                responsabilite_financiere:
+                  type: boolean
+                ordre_affichage:
+                  type: integer
+      responses:
+        '200':
+          description: Participation modifiée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipationContrat'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-008
+      x-hydrosea-tables:
+        - abo.participation_contrat
+  /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}/cloturer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+      - $ref: '#/components/parameters/IdentifiantParticipation'
+    post:
+      operationId: cloturer_participant_contrat
+      summary: Clôturer une participation au contrat
+      description: Clôture le rôle sans supprimer sa période historique.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date_fin_validite
+                - motif_fin
+              properties:
+                date_fin_validite:
+                  type: string
+                  format: date-time
+                motif_fin:
+                  type: string
+      responses:
+        '200':
+          description: Participation clôturée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ParticipationContrat'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-002
+      x-hydrosea-rm:
+        - RM-CTR-001
+      x-hydrosea-evt:
+        - EVT-CTR-009
+      x-hydrosea-tables:
+        - abo.participation_contrat
+  /v1/points-desserte:
+    get:
+      operationId: rechercher_points_desserte
+      summary: Rechercher des Points de desserte
+      description: Recherche le patrimoine synchronisé ; le SIG reste maître.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: statut
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page de Points de desserte
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePointsDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PD
+      x-hydrosea-evt:
+        - EVT-PD-001
+      x-hydrosea-tables:
+        - des.point_desserte
+  /v1/points-desserte/{identifiant_point_desserte}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPointDesserte'
+    get:
+      operationId: consulter_point_desserte
+      summary: Consulter un Point de desserte
+      description: Retourne les attributs synchronisés sans opération patrimoniale d’écriture.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:lecture
+      responses:
+        '200':
+          description: Point trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PD
+      x-hydrosea-evt:
+        - EVT-PD-006
+      x-hydrosea-tables:
+        - des.point_desserte
+  /v1/points-desserte/synchroniser-sig:
+    post:
+      operationId: synchroniser_points_desserte_sig
+      summary: Synchroniser les Points de desserte depuis le SIG
+      description: Importe les changements du référentiel maître sans modifier le SIG.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - administration
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '202':
+          description: Synchronisation acceptée
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-004
+      x-hydrosea-rm:
+        - RM-PD
+      x-hydrosea-evt:
+        - EVT-PD-006
+      x-hydrosea-tables:
+        - des.point_desserte
+  /v1/points-consommation:
+    get:
+      operationId: rechercher_points_consommation
+      summary: Rechercher des Points de consommation
+      description: Recherche paginée par référence, statut et usage.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: statut
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page de Points
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePointsConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-001
+      x-hydrosea-tables:
+        - des.point_consommation
+    post:
+      operationId: creer_point_consommation
+      summary: Créer un Point de consommation
+      description: Prépare administrativement le Point relié au patrimoine SIG.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerPointConsommation'
+      responses:
+        '201':
+          description: Point créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-001
+      x-hydrosea-tables:
+        - des.point_consommation
+        - des.liaison_desserte_consommation
+  /v1/points-consommation/{identifiant_point_consommation}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+    get:
+      operationId: consulter_point_consommation
+      summary: Consulter un Point de consommation
+      description: Retourne le Point et ses références patrimoniales.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:lecture
+      responses:
+        '200':
+          description: Point trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-001
+      x-hydrosea-tables:
+        - des.point_consommation
+    patch:
+      operationId: modifier_point_consommation
+      summary: Modifier un Point de consommation
+      description: Modifie uniquement les attributs non patrimoniaux autorisés.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierPointConsommation'
+      responses:
+        '200':
+          description: Point modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-001
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-005
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/ouvrir:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+    post:
+      operationId: ouvrir_point_consommation
+      summary: Ouvrir un Point de consommation
+      description: Fait passer le Point préparé à l’état ouvert.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Point ouvert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-004
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-002
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/fermer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+    post:
+      operationId: fermer_point_consommation
+      summary: Fermer un Point de consommation
+      description: Ferme le Point selon une décision métier explicite.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Point fermé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-004
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-007
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/reouvrir:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+    post:
+      operationId: reouvrir_point_consommation
+      summary: Réouvrir un Point de consommation
+      description: Réouvre le Point lorsque la transition est autorisée ; le cycle définitif reste à arbitrer.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Point réouvert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-TRV-004
+      x-hydrosea-rm:
+        - RM-PC
+      x-hydrosea-evt:
+        - EVT-PC-004
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/compteurs:
+    get:
+      operationId: rechercher_compteurs
+      summary: Rechercher des compteurs
+      description: Recherche paginée par numéro de série et statut.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: statut
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Page de compteurs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageCompteurs'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-001
+      x-hydrosea-tables:
+        - cpt.compteur
+    post:
+      operationId: enregistrer_compteur
+      summary: Enregistrer un compteur
+      description: Enregistre un compteur dans le parc sans l’affecter à un Point.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerCompteur'
+      responses:
+        '201':
+          description: Compteur enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-001
+      x-hydrosea-tables:
+        - cpt.compteur
+  /v1/compteurs/{identifiant_compteur}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    get:
+      operationId: consulter_compteur
+      summary: Consulter un compteur
+      description: Retourne le compteur et son état courant.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      responses:
+        '200':
+          description: Compteur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-001
+      x-hydrosea-tables:
+        - cpt.compteur
+    patch:
+      operationId: modifier_compteur
+      summary: Modifier un compteur
+      description: Corrige les caractéristiques autorisées sans modifier une affectation.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierCompteur'
+      responses:
+        '200':
+          description: Compteur modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-008
+      x-hydrosea-tables:
+        - cpt.compteur
+  /v1/compteurs/{identifiant_compteur}/poser:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: poser_compteur
+      summary: Poser un compteur
+      description: Crée ou active l’affectation au Point de consommation.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerAffectationCompteur'
+      responses:
+        '201':
+          description: Affectation créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-AFF
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-003
+        - EVT-AFF-002
+      x-hydrosea-tables:
+        - cpt.compteur
+        - cpt.affectation_compteur
+  /v1/compteurs/{identifiant_compteur}/deposer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: deposer_compteur
+      summary: Déposer un compteur
+      description: Clôture l’affectation active avec l’index de dépose.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - date_depose
+                - index_depose
+              properties:
+                date_depose:
+                  type: string
+                  format: date-time
+                index_depose:
+                  type: number
+                  minimum: 0
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Affectation clôturée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-002
+      x-hydrosea-rm:
+        - RM-AFF
+      x-hydrosea-evt:
+        - EVT-CPT-004
+        - EVT-AFF-003
+      x-hydrosea-tables:
+        - cpt.compteur
+        - cpt.affectation_compteur
+  /v1/compteurs/{identifiant_compteur}/remplacer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: remplacer_compteur
+      summary: Remplacer un compteur
+      description: Lie la dépose et la pose ; l’ordre temporel définitif reste documenté dans les arbitrages de données.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifiant_nouveau_compteur
+                - date_remplacement
+                - index_depose
+                - index_pose
+              properties:
+                identifiant_nouveau_compteur:
+                  type: string
+                  format: uuid
+                date_remplacement:
+                  type: string
+                  format: date-time
+                index_depose:
+                  type: number
+                  minimum: 0
+                index_pose:
+                  type: number
+                  minimum: 0
+            examples:
+              remplacement:
+                $ref: '#/components/examples/remplacement'
+      responses:
+        '200':
+          description: Remplacement enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-003
+      x-hydrosea-rm:
+        - RM-AFF
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-005
+        - EVT-AFF-003
+        - EVT-AFF-002
+      x-hydrosea-tables:
+        - cpt.compteur
+        - cpt.affectation_compteur
+  /v1/compteurs/{identifiant_compteur}/reformer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: reformer_compteur
+      summary: Réformer un compteur
+      description: Retire définitivement le compteur du parc utilisable selon RM-CPT.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Compteur réformé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-002
+      x-hydrosea-rm:
+        - RM-CPT
+      x-hydrosea-evt:
+        - EVT-CPT-007
+      x-hydrosea-tables:
+        - cpt.compteur
+  /v1/affectations-compteur:
+    get:
+      operationId: rechercher_affectations_compteur
+      summary: Rechercher des affectations de compteur
+      description: Recherche les périodes d’affectation par compteur ou Point.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      parameters:
+        - name: identifiant_compteur
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: identifiant_point_consommation
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Page d’affectations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageAffectationsCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-AFF
+      x-hydrosea-evt:
+        - EVT-AFF-001
+      x-hydrosea-tables:
+        - cpt.affectation_compteur
+    post:
+      operationId: creer_affectation_compteur
+      summary: Créer une affectation de compteur
+      description: Prépare une affectation sans contourner le Service métier de pose.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerAffectationCompteur'
+      responses:
+        '201':
+          description: Affectation préparée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-AFF
+      x-hydrosea-evt:
+        - EVT-AFF-001
+      x-hydrosea-tables:
+        - cpt.affectation_compteur
+  /v1/affectations-compteur/{identifiant_affectation}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantAffectation'
+    get:
+      operationId: consulter_affectation_compteur
+      summary: Consulter une affectation de compteur
+      description: Retourne une période d’affectation et ses index figés.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      responses:
+        '200':
+          description: Affectation trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-001
+      x-hydrosea-rm:
+        - RM-AFF
+      x-hydrosea-evt:
+        - EVT-AFF-001
+      x-hydrosea-tables:
+        - cpt.affectation_compteur
+  /v1/affectations-compteur/{identifiant_affectation}/cloturer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantAffectation'
+    post:
+      operationId: cloturer_affectation_compteur
+      summary: Clôturer une affectation de compteur
+      description: Clôture la période sans suppression physique.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Affectation clôturée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationCompteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-002
+      x-hydrosea-rm:
+        - RM-AFF
+      x-hydrosea-evt:
+        - EVT-AFF-003
+      x-hydrosea-tables:
+        - cpt.affectation_compteur
+  /v1/releves:
+    get:
+      operationId: rechercher_releves
+      summary: Rechercher des relèves
+      description: Recherche paginée par compteur, Point, statut et période.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      parameters:
+        - name: identifiant_compteur
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: identifiant_point_consommation
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: statut
+          in: query
+          schema:
+            type: string
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Page de relèves
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageReleves'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-004
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-001
+      x-hydrosea-tables:
+        - cpt.releve
+    post:
+      operationId: enregistrer_releve
+      summary: Enregistrer une relève
+      description: Enregistre une observation sans modifier une relève validée.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerReleve'
+            examples:
+              saisie:
+                $ref: '#/components/examples/saisie_releve'
+      responses:
+        '201':
+          description: Relève enregistrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-004
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-001
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/releves/importer:
+    post:
+      operationId: importer_releves
+      summary: Importer un lot de relèves
+      description: Retourne un bilan ligne par ligne ; le seuil de traitement asynchrone est à arbitrer.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - releves
+              properties:
+                releves:
+                  type: array
+                  minItems: 1
+                  maxItems: 1000
+                  items:
+                    $ref: '#/components/schemas/CreerReleve'
+      responses:
+        '200':
+          description: Bilan d’import
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BilanImportReleves'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-005
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-002
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/releves/{identifiant_releve}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantReleve'
+    get:
+      operationId: consulter_releve
+      summary: Consulter une relève
+      description: Retourne la mesure, son origine et son état de contrôle.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:lecture
+      responses:
+        '200':
+          description: Relève trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-004
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-001
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/releves/{identifiant_releve}/valider:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantReleve'
+    post:
+      operationId: valider_releve
+      summary: Valider une relève
+      description: Valide la relève après contrôles automatiques ou manuels.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Relève validée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-006
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-004
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/releves/{identifiant_releve}/rejeter:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantReleve'
+    post:
+      operationId: rejeter_releve
+      summary: Rejeter une relève
+      description: Rejette la relève avec un motif explicite.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - motif
+              properties:
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Relève rejetée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-006
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-005
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/releves/{identifiant_releve}/corriger:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantReleve'
+    post:
+      operationId: corriger_releve
+      summary: Corriger une relève
+      description: Crée une nouvelle relève liée à l’originale ; aucune réécriture silencieuse.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrigerReleve'
+            examples:
+              correction:
+                $ref: '#/components/examples/correction_releve'
+      responses:
+        '201':
+          description: Relève de correction créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-006
+      x-hydrosea-rm:
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-006
+      x-hydrosea-tables:
+        - cpt.releve
+  /v1/factures:
+    get:
+      operationId: rechercher_factures
+      summary: Rechercher des factures
+      description: Recherche paginée par contrat, statut, référence et période.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: statut
+          in: query
+          schema:
+            type: string
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Page de factures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageFactures'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-001
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-001
+      x-hydrosea-tables:
+        - fac.facture
+  /v1/factures/calculer:
+    post:
+      operationId: calculer_factures
+      summary: Calculer des brouillons de facture
+      description: Commande le calcul sans définir la tarification dans OpenAPI.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculerFacture'
+      responses:
+        '202':
+          description: Calcul accepté
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-001
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-001
+      x-hydrosea-tables:
+        - fac.facture
+        - fac.ligne_facture
+        - fac.lien_releve_facture
+  /v1/factures/{identifiant_facture}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    get:
+      operationId: consulter_facture
+      summary: Consulter une facture
+      description: Retourne la pièce et ses montants sans document binaire.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:lecture
+      responses:
+        '200':
+          description: Facture trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-002
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-003
+      x-hydrosea-tables:
+        - fac.facture
+  /v1/factures/{identifiant_facture}/emettre:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    post:
+      operationId: emettre_facture
+      summary: Émettre une facture
+      description: Fige et émet un brouillon validé ; la diffusion documentaire reste à arbitrer.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      responses:
+        '200':
+          description: Facture émise
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+              examples:
+                emission:
+                  $ref: '#/components/examples/emission'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-002
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-003
+      x-hydrosea-tables:
+        - fac.facture
+        - fac.ligne_facture
+  /v1/factures/{identifiant_facture}/corriger:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    post:
+      operationId: corriger_facture
+      summary: Corriger une facture
+      description: Crée une pièce de correction ou un avoir lié ; le lettrage définitif reste à arbitrer.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type_piece
+                - motif
+              properties:
+                type_piece:
+                  type: string
+                  enum:
+                    - AVOIR
+                    - CORRECTION
+                motif:
+                  type: string
+      responses:
+        '201':
+          description: Pièce de correction créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-003
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-005
+      x-hydrosea-tables:
+        - fac.facture
+        - fac.ligne_facture
+  /v1/factures/{identifiant_facture}/annuler:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    post:
+      operationId: annuler_facture
+      summary: Annuler une facture
+      description: Annule la pièce selon son état et conserve l’historique.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - motif
+              properties:
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Facture annulée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Facture'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-004
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-004
+      x-hydrosea-tables:
+        - fac.facture
+  /v1/factures/{identifiant_facture}/lignes:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    get:
+      operationId: consulter_lignes_facture
+      summary: Consulter les lignes d’une facture
+      description: Retourne le détail figé de la pièce.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:lecture
+      responses:
+        '200':
+          description: Lignes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LigneFacture'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-002
+      x-hydrosea-rm:
+        - RM-FAC
+      x-hydrosea-evt:
+        - EVT-FAC-003
+      x-hydrosea-tables:
+        - fac.ligne_facture
+  /v1/factures/{identifiant_facture}/releves:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantFacture'
+    get:
+      operationId: consulter_releves_facture
+      summary: Consulter les relèves d’une facture
+      description: Retourne les mesures figées utilisées comme preuves de calcul.
+      tags:
+        - Facturation
+      security:
+        - oauth2:
+            - facturation:lecture
+      responses:
+        '200':
+          description: Relèves de la facture
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Releve'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-FAC-001
+      x-hydrosea-rm:
+        - RM-FAC
+        - RM-REL
+      x-hydrosea-evt:
+        - EVT-REL-008
+      x-hydrosea-tables:
+        - fac.lien_releve_facture
+        - cpt.releve
+  /v1/paiements:
+    get:
+      operationId: rechercher_paiements
+      summary: Rechercher des paiements
+      description: Recherche paginée par référence, statut, Tiers payeur ou période.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: reference
+          in: query
+          schema:
+            type: string
+        - name: statut
+          in: query
+          schema:
+            type: string
+        - name: identifiant_tiers
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Page de paiements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePaiements'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-001
+      x-hydrosea-rm:
+        - RM-PAI
+      x-hydrosea-evt:
+        - EVT-PAI-001
+      x-hydrosea-tables:
+        - pai.paiement
+    post:
+      operationId: enregistrer_paiement
+      summary: Enregistrer un paiement
+      description: Enregistre un paiement idempotent par clé et référence externe.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerPaiement'
+      responses:
+        '201':
+          description: Paiement enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paiement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-001
+      x-hydrosea-rm:
+        - RM-PAI
+      x-hydrosea-evt:
+        - EVT-PAI-001
+      x-hydrosea-tables:
+        - pai.paiement
+  /v1/paiements/{identifiant_paiement}:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPaiement'
+    get:
+      operationId: consulter_paiement
+      summary: Consulter un paiement
+      description: Retourne le paiement et son montant restant disponible.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:lecture
+      responses:
+        '200':
+          description: Paiement trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paiement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-001
+      x-hydrosea-rm:
+        - RM-PAI
+      x-hydrosea-evt:
+        - EVT-PAI-001
+      x-hydrosea-tables:
+        - pai.paiement
+        - pai.imputation_paiement
+  /v1/paiements/{identifiant_paiement}/imputer:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPaiement'
+    post:
+      operationId: imputer_paiement
+      summary: Imputer un paiement
+      description: Répartit le montant sur plusieurs factures sous contrôle bilatéral des plafonds.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImputerPaiement'
+            examples:
+              imputation:
+                $ref: '#/components/examples/imputation'
+      responses:
+        '200':
+          description: Imputations validées
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ImputationPaiement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-001
+      x-hydrosea-rm:
+        - RM-PAI
+        - BR-008
+      x-hydrosea-evt:
+        - EVT-PAI-002
+      x-hydrosea-tables:
+        - pai.paiement
+        - pai.imputation_paiement
+        - fac.facture
+  /v1/paiements/{identifiant_paiement}/contrepasser-imputation:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPaiement'
+    post:
+      operationId: contrepasser_imputation_paiement
+      summary: Contrepasser une imputation de paiement
+      description: Crée une contrepassation identique sans supprimer l’imputation d’origine.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identifiant_imputation
+                - motif
+              properties:
+                identifiant_imputation:
+                  type: string
+                  format: uuid
+                motif:
+                  type: string
+      responses:
+        '201':
+          description: Contrepassation créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImputationPaiement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-001
+      x-hydrosea-rm:
+        - RM-PAI
+      x-hydrosea-evt:
+        - EVT-PAI-003
+      x-hydrosea-tables:
+        - pai.imputation_paiement
+  /v1/paiements/{identifiant_paiement}/rembourser:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantPaiement'
+    post:
+      operationId: rembourser_paiement
+      summary: Rembourser un paiement
+      description: Commande un décaissement lié ; les conditions définitives relèvent de BS-PAI-002.
+      tags:
+        - Paiements
+      security:
+        - oauth2:
+            - paiements:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - montant
+                - motif
+              properties:
+                montant:
+                  type: number
+                  exclusiveMinimum: 0
+                motif:
+                  type: string
+      responses:
+        '201':
+          description: Remboursement enregistré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paiement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PAI-002
+      x-hydrosea-rm:
+        - RM-PAI
+      x-hydrosea-evt:
+        - EVT-PAI-004
+      x-hydrosea-tables:
+        - pai.paiement
+  /v1/evenements-metier:
+    get:
+      operationId: rechercher_evenements_metier
+      summary: Rechercher des événements métier
+      description: Lecture contrôlée et minimisée ; aucune charge complète ni opération d’écriture n’est exposée.
+      tags:
+        - Audit
+      security:
+        - oauth2:
+            - audit:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            maximum: 100
+        - name: type_evenement
+          in: query
+          schema:
+            type: string
+        - name: identifiant_agregat
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: date_debut
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: date_fin
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Page d’événements minimisés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageEvenementsMetier'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - A_ARBITRER_BS_AUDIT
+      x-hydrosea-rm:
+        - ADR-006
+      x-hydrosea-evt:
+        - EVT-*
+      x-hydrosea-tables:
+        - evt.evenement_metier
+components:
+  schemas:
+    Tiers:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_tiers
+            - reference
+            - categorie
+            - statut
+          properties:
+            identifiant_tiers:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              maxLength: 40
+              example: TIE-000042
+              readOnly: true
+            categorie:
+              type: string
+              enum:
+                - PERSONNE_PHYSIQUE
+                - PERSONNE_MORALE
+              readOnly: true
+            statut:
+              type: string
+              example: ACTIF
+              readOnly: true
+            personne_physique:
+              $ref: '#/components/schemas/PersonnePhysique'
+            personne_morale:
+              $ref: '#/components/schemas/PersonneMorale'
+            coordonnees:
+              type: array
+              items:
+                $ref: '#/components/schemas/Coordonnee'
+      description: Représentation minimisée de BO-001. Voir le dictionnaire de données et RM-TIE.
+    PersonnePhysique:
+      type: object
+      required:
+        - nom
+        - prenoms
+      properties:
+        nom:
+          type: string
+          example: Martin
+        nom_usage:
+          type: string
+        prenoms:
+          type: string
+          example: Camille
+        date_naissance:
+          type: string
+          format: date
+          writeOnly: true
+    PersonneMorale:
+      type: object
+      required:
+        - raison_sociale
+      properties:
+        raison_sociale:
+          type: string
+          example: Atelier de l'Anjou
+        siret:
+          type: string
+          pattern: ^[0-9]{14}$
+          example: '12345678901234'
+        forme_juridique:
+          type: string
+          example: SAS
+    Coordonnee:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - type_coordonnees
+            - valeur
+            - principale
+          properties:
+            identifiant_coordonnees:
+              type: string
+              format: uuid
+              readOnly: true
+            type_coordonnees:
+              type: string
+              example: COURRIEL
+            valeur:
+              type: string
+              example: camille.martin@example.fr
+            principale:
+              type: boolean
+            date_debut_validite:
+              type: string
+              format: date-time
+            date_fin_validite:
+              type: string
+              format: date-time
+    Adresse:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - reference
+            - commune
+          properties:
+            identifiant_adresse:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              example: ADR-49007-001
+            numero_voie:
+              type: string
+            nom_voie:
+              type: string
+              example: rue de la Loire
+            complement:
+              type: string
+            code_postal:
+              type: string
+              pattern: ^[0-9]{5}$
+              example: '49000'
+            commune:
+              type: string
+              example: Angers
+    ContratAbonnement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_contrat
+            - reference
+            - statut
+          properties:
+            identifiant_contrat:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              example: CTR-2026-000128
+              readOnly: true
+            statut:
+              type: string
+              example: BROUILLON
+              readOnly: true
+            date_effet:
+              type: string
+              format: date-time
+            date_fin:
+              type: string
+              format: date-time
+            date_resiliation:
+              type: string
+              format: date-time
+            identifiant_point_consommation_courant:
+              type: string
+              format: uuid
+              readOnly: true
+              description: Projection de la liaison temporelle abo.liaison_contrat_consommation à l’instant courant.
+            participants:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParticipationContrat'
+    ParticipationContrat:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_tiers
+            - role_contractuel
+            - principal
+            - date_debut_validite
+          properties:
+            identifiant_participation:
+              type: string
+              format: uuid
+              readOnly: true
+            identifiant_tiers:
+              type: string
+              format: uuid
+            role_contractuel:
+              type: string
+              example: TITULAIRE
+            principal:
+              type: boolean
+            responsabilite_financiere:
+              type: boolean
+            date_debut_validite:
+              type: string
+              format: date-time
+            date_fin_validite:
+              type: string
+              format: date-time
+            motif_fin:
+              type: string
+    PointDesserte:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_point_desserte
+            - reference
+            - identifiant_sig
+            - statut
+          properties:
+            identifiant_point_desserte:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              example: PD-004201
+            identifiant_sig:
+              type: string
+              example: SIG-PD-88421
+            statut:
+              type: string
+              example: ACTIF
+            version_sig:
+              type: string
+              readOnly: true
+            date_synchronisation:
+              type: string
+              format: date-time
+              readOnly: true
+      description: Patrimoine en lecture ; le SIG reste maître des géométries.
+    PointConsommation:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_point_consommation
+            - reference
+            - statut
+          properties:
+            identifiant_point_consommation:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              example: PC-009842
+              readOnly: true
+            statut:
+              type: string
+              enum:
+                - PREPARE
+                - OUVERT
+                - FERME
+              readOnly: true
+            usage:
+              type: string
+              example: DOMESTIQUE
+            identifiant_adresse:
+              type: string
+              format: uuid
+            adresse:
+              $ref: '#/components/schemas/Adresse'
+            identifiant_point_desserte_courant:
+              type: string
+              format: uuid
+              readOnly: true
+              description: Projection de des.liaison_desserte_consommation à l’instant courant.
+    Compteur:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_compteur
+            - numero_serie
+            - statut
+          properties:
+            identifiant_compteur:
+              type: string
+              format: uuid
+              readOnly: true
+            numero_serie:
+              type: string
+              example: CPT-24-778899
+              readOnly: true
+            statut:
+              type: string
+              example: DISPONIBLE
+              readOnly: true
+            fabricant:
+              type: string
+              example: Hydrométrie France
+            modele:
+              type: string
+              example: H100
+            calibre:
+              type: string
+              example: DN15
+    AffectationCompteur:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_compteur
+            - identifiant_point_consommation
+            - date_debut_validite
+            - statut
+          properties:
+            identifiant_affectation:
+              type: string
+              format: uuid
+              readOnly: true
+            identifiant_compteur:
+              type: string
+              format: uuid
+            identifiant_point_consommation:
+              type: string
+              format: uuid
+            date_debut_validite:
+              type: string
+              format: date-time
+            date_fin_validite:
+              type: string
+              format: date-time
+            index_pose:
+              type: number
+              minimum: 0
+              example: 125.3
+            index_depose:
+              type: number
+              minimum: 0
+            statut:
+              type: string
+              example: ACTIVE
+    Releve:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_compteur
+            - valeur_index
+            - date_mesure
+            - origine
+            - statut
+          properties:
+            identifiant_releve:
+              type: string
+              format: uuid
+              readOnly: true
+            identifiant_compteur:
+              type: string
+              format: uuid
+            identifiant_affectation:
+              type: string
+              format: uuid
+            valeur_index:
+              type: number
+              minimum: 0
+              example: 486.125
+            date_mesure:
+              type: string
+              format: date-time
+            origine:
+              type: string
+              example: MANUELLE
+            statut:
+              type: string
+              example: A_CONTROLER
+            estimation:
+              type: boolean
+            identifiant_releve_origine:
+              type: string
+              format: uuid
+    BilanImportReleves:
+      type: object
+      required:
+        - identifiant_import
+        - nombre_lignes
+        - nombre_acceptees
+        - nombre_rejetees
+        - resultats
+      properties:
+        identifiant_import:
+          type: string
+          format: uuid
+        nombre_lignes:
+          type: integer
+          minimum: 0
+        nombre_acceptees:
+          type: integer
+          minimum: 0
+        nombre_rejetees:
+          type: integer
+          minimum: 0
+        resultats:
+          type: array
+          items:
+            type: object
+            required:
+              - numero_ligne
+              - statut
+            properties:
+              numero_ligne:
+                type: integer
+                minimum: 1
+              statut:
+                type: string
+                enum:
+                  - ACCEPTEE
+                  - REJETEE
+              erreur:
+                $ref: '#/components/schemas/ErreurApi'
+    Facture:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_facture
+            - numero
+            - identifiant_contrat
+            - type_piece
+            - periode_debut
+            - periode_fin
+            - statut
+            - montant_ttc
+          properties:
+            identifiant_facture:
+              type: string
+              format: uuid
+              readOnly: true
+            numero:
+              type: string
+              example: FAC-2026-000321
+              readOnly: true
+            identifiant_contrat:
+              type: string
+              format: uuid
+            type_piece:
+              type: string
+              enum:
+                - FACTURE
+                - AVOIR
+                - CORRECTION
+            identifiant_facture_origine:
+              type: string
+              format: uuid
+            periode_debut:
+              type: string
+              format: date
+            periode_fin:
+              type: string
+              format: date
+            statut:
+              type: string
+              example: BROUILLON
+            montant_ht:
+              type: number
+              minimum: 0
+              multipleOf: 0.01
+            montant_taxe:
+              type: number
+              minimum: 0
+              multipleOf: 0.01
+            montant_ttc:
+              type: number
+              minimum: 0
+              multipleOf: 0.01
+              example: 42.6
+            lignes:
+              type: array
+              items:
+                $ref: '#/components/schemas/LigneFacture'
+    LigneFacture:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - ordre
+            - nature
+            - libelle
+            - quantite
+            - prix_unitaire
+            - montant_ttc
+          properties:
+            identifiant_ligne_facture:
+              type: string
+              format: uuid
+              readOnly: true
+            ordre:
+              type: integer
+              minimum: 1
+            nature:
+              type: string
+              example: CONSOMMATION
+            libelle:
+              type: string
+              example: Consommation d'eau potable
+            quantite:
+              type: number
+              minimum: 0
+            prix_unitaire:
+              type: number
+              minimum: 0
+            montant_ttc:
+              type: number
+              minimum: 0
+    Paiement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_paiement
+            - reference
+            - sens
+            - montant
+            - moyen
+            - date_valeur
+            - statut
+            - origine
+          properties:
+            identifiant_paiement:
+              type: string
+              format: uuid
+              readOnly: true
+            reference:
+              type: string
+              example: PAI-2026-000987
+              readOnly: true
+            identifiant_tiers_payeur:
+              type: string
+              format: uuid
+            sens:
+              type: string
+              enum:
+                - ENCAISSEMENT
+                - DECAISSEMENT
+            montant:
+              type: number
+              exclusiveMinimum: 0
+              example: 70
+            montant_disponible:
+              type: number
+              minimum: 0
+              readOnly: true
+            moyen:
+              type: string
+              example: VIREMENT
+            date_valeur:
+              type: string
+              format: date
+            reference_externe:
+              type: string
+              example: VIR-884401
+            statut:
+              type: string
+              example: RECU
+            origine:
+              type: string
+              example: BANQUE
+    ImputationPaiement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required:
+            - identifiant_paiement
+            - identifiant_facture
+            - montant
+            - statut
+          properties:
+            identifiant_imputation:
+              type: string
+              format: uuid
+              readOnly: true
+            identifiant_paiement:
+              type: string
+              format: uuid
+            identifiant_facture:
+              type: string
+              format: uuid
+            montant:
+              type: number
+              exclusiveMinimum: 0
+            date_imputation:
+              type: string
+              format: date-time
+              readOnly: true
+            identifiant_imputation_origine:
+              type: string
+              format: uuid
+            statut:
+              type: string
+              enum:
+                - VALIDEE
+                - CONTREPASSEE
+    EvenementMetier:
+      type: object
+      readOnly: true
+      required:
+        - identifiant_evenement
+        - type_evenement
+        - type_agregat
+        - identifiant_agregat
+        - date_metier
+      properties:
+        identifiant_evenement:
+          type: string
+          format: uuid
+        type_evenement:
+          type: string
+          example: evt_ctr_contrat_active
+        type_agregat:
+          type: string
+          example: contrat_abonnement
+        identifiant_agregat:
+          type: string
+          format: uuid
+        date_metier:
+          type: string
+          format: date-time
+        identifiant_correlation:
+          type: string
+          format: uuid
+      description: Vue contrôlée et minimisée ; aucune écriture ni charge interne complète.
+    ErreurApi:
+      type: object
+      required:
+        - code
+        - titre
+        - detail
+        - statut_http
+        - identifiant_correlation
+        - date_erreur
+      properties:
+        code:
+          type: string
+          example: SYS-CONFLIT-VERSION
+        titre:
+          type: string
+          example: Version obsolète
+        detail:
+          type: string
+        statut_http:
+          type: integer
+          minimum: 400
+          maximum: 599
+        identifiant_correlation:
+          type: string
+          format: uuid
+        date_erreur:
+          type: string
+          format: date-time
+        champ:
+          type: string
+        regle_metier:
+          type: string
+          example: RM-CTR-001
+        service_metier:
+          type: string
+          example: BS-CTR-002
+        erreurs_enfants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErreurApi'
+    CreerTiers:
+      oneOf:
+        - $ref: '#/components/schemas/CreerTiersPersonnePhysique'
+        - $ref: '#/components/schemas/CreerTiersPersonneMorale'
+      discriminator:
+        propertyName: categorie
+        mapping:
+          PERSONNE_PHYSIQUE: '#/components/schemas/CreerTiersPersonnePhysique'
+          PERSONNE_MORALE: '#/components/schemas/CreerTiersPersonneMorale'
+    ModifierTiers:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        personne_physique:
+          $ref: '#/components/schemas/PersonnePhysique'
+        personne_morale:
+          $ref: '#/components/schemas/PersonneMorale'
+    CreerContratAbonnement:
+      type: object
+      additionalProperties: false
+      required:
+        - date_effet
+        - identifiant_point_consommation
+        - participants
+      properties:
+        date_effet:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+        identifiant_point_consommation:
+          type: string
+          format: uuid
+        participants:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/CreerParticipationContrat'
+    CreerParticipationContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_tiers
+        - role_contractuel
+        - principal
+        - date_debut_validite
+      properties:
+        identifiant_tiers:
+          type: string
+          format: uuid
+        role_contractuel:
+          type: string
+        principal:
+          type: boolean
+        responsabilite_financiere:
+          type: boolean
+        date_debut_validite:
+          type: string
+          format: date-time
+    ModifierContratAbonnement:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        date_effet:
+          type: string
+          format: date-time
+        date_fin:
+          type: string
+          format: date-time
+    CreerPointConsommation:
+      type: object
+      additionalProperties: false
+      required:
+        - usage
+        - identifiant_point_desserte
+        - date_debut_validite
+      properties:
+        usage:
+          type: string
+        identifiant_adresse:
+          type: string
+          format: uuid
+        identifiant_point_desserte:
+          type: string
+          format: uuid
+        date_debut_validite:
+          type: string
+          format: date-time
+    ModifierPointConsommation:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        usage:
+          type: string
+        identifiant_adresse:
+          type: string
+          format: uuid
+    CreerCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - numero_serie
+      properties:
+        numero_serie:
+          type: string
+        fabricant:
+          type: string
+        modele:
+          type: string
+        calibre:
+          type: string
+    ModifierCompteur:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        fabricant:
+          type: string
+        modele:
+          type: string
+        calibre:
+          type: string
+    CreerAffectationCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_compteur
+        - identifiant_point_consommation
+        - date_debut_validite
+      properties:
+        identifiant_compteur:
+          type: string
+          format: uuid
+        identifiant_point_consommation:
+          type: string
+          format: uuid
+        date_debut_validite:
+          type: string
+          format: date-time
+        index_pose:
+          type: number
+          minimum: 0
+    CreerReleve:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_compteur
+        - valeur_index
+        - date_mesure
+        - origine
+      properties:
+        identifiant_compteur:
+          type: string
+          format: uuid
+        identifiant_affectation:
+          type: string
+          format: uuid
+        valeur_index:
+          type: number
+          minimum: 0
+        date_mesure:
+          type: string
+          format: date-time
+        origine:
+          type: string
+        estimation:
+          type: boolean
+    CorrigerReleve:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_compteur
+        - valeur_index
+        - date_mesure
+        - origine
+        - motif_correction
+      properties:
+        identifiant_compteur:
+          type: string
+          format: uuid
+        identifiant_affectation:
+          type: string
+          format: uuid
+        valeur_index:
+          type: number
+          minimum: 0
+        date_mesure:
+          type: string
+          format: date-time
+        origine:
+          type: string
+        estimation:
+          type: boolean
+        motif_correction:
+          type: string
+    CalculerFacture:
+      type: object
+      additionalProperties: false
+      required:
+        - periode_debut
+        - periode_fin
+      properties:
+        periode_debut:
+          type: string
+          format: date
+        periode_fin:
+          type: string
+          format: date
+        identifiants_contrats:
+          type: array
+          items:
+            type: string
+            format: uuid
+    CreerPaiement:
+      type: object
+      additionalProperties: false
+      required:
+        - sens
+        - montant
+        - moyen
+        - date_valeur
+        - origine
+      properties:
+        identifiant_tiers_payeur:
+          type: string
+          format: uuid
+        sens:
+          type: string
+          enum:
+            - ENCAISSEMENT
+            - DECAISSEMENT
+        montant:
+          type: number
+          exclusiveMinimum: 0
+        moyen:
+          type: string
+        date_valeur:
+          type: string
+          format: date
+        reference_externe:
+          type: string
+        origine:
+          type: string
+    ImputerPaiement:
+      type: object
+      additionalProperties: false
+      required:
+        - imputations
+      properties:
+        imputations:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required:
+              - identifiant_facture
+              - montant
+            properties:
+              identifiant_facture:
+                type: string
+                format: uuid
+              montant:
+                type: number
+                exclusiveMinimum: 0
+    PageTiers:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/Tiers'
+    PageContratsAbonnement:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/ContratAbonnement'
+    PagePointsDesserte:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/PointDesserte'
+    PagePointsConsommation:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/PointConsommation'
+    PageCompteurs:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/Compteur'
+    PageAffectationsCompteur:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/AffectationCompteur'
+    PageReleves:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/Releve'
+    PageFactures:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/Facture'
+    PagePaiements:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/Paiement'
+    PageEvenementsMetier:
+      allOf:
+        - $ref: '#/components/schemas/SoclePagination'
+        - type: object
+          required:
+            - resultats
+          properties:
+            resultats:
+              type: array
+              items:
+                $ref: '#/components/schemas/EvenementMetier'
+    SoclePagination:
+      type: object
+      required:
+        - page
+        - taille_page
+        - nombre_total
+      properties:
+        page:
+          type: integer
+          minimum: 1
+        taille_page:
+          type: integer
+          minimum: 1
+          maximum: 100
+        nombre_total:
+          type: integer
+          minimum: 0
+        lien_precedent:
+          type: string
+          format: uri
+        lien_suivant:
+          type: string
+          format: uri
+    IdentiteVersionnee:
+      type: object
+      required:
+        - version
+      properties:
+        version:
+          type: integer
+          minimum: 1
+          readOnly: true
+        date_creation:
+          type: string
+          format: date-time
+          readOnly: true
+        date_modification:
+          type: string
+          format: date-time
+          readOnly: true
+    CreerTiersPersonnePhysique:
+      type: object
+      additionalProperties: false
+      required:
+        - categorie
+        - personne_physique
+      properties:
+        categorie:
+          const: PERSONNE_PHYSIQUE
+        personne_physique:
+          $ref: '#/components/schemas/PersonnePhysique'
+    CreerTiersPersonneMorale:
+      type: object
+      additionalProperties: false
+      required:
+        - categorie
+        - personne_morale
+      properties:
+        categorie:
+          const: PERSONNE_MORALE
+        personne_morale:
+          $ref: '#/components/schemas/PersonneMorale'
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: OAuth2 avec JWT ; les URL définitives dépendent du fournisseur d’identité.
+      flows:
+        clientCredentials:
+          tokenUrl: https://auth.example.hydrosea.fr/oauth2/token
+          scopes:
+            tiers:lecture: Lire les Tiers
+            tiers:ecriture: Écrire les Tiers
+            contrats:lecture: Lire les contrats
+            contrats:ecriture: Écrire les contrats
+            comptage:lecture: Lire les points, compteurs et relèves
+            comptage:ecriture: Écrire les points, compteurs et relèves
+            facturation:lecture: Lire les factures
+            facturation:ecriture: Commander la facturation
+            paiements:lecture: Lire les paiements
+            paiements:ecriture: Écrire les paiements et imputations
+            audit:lecture: Lire les événements minimisés
+            administration: Administrer les fonctions techniques autorisées
+  parameters:
+    IdentifiantTiers:
+      name: identifiant_tiers
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantContrat:
+      name: identifiant_contrat
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantParticipation:
+      name: identifiant_participation
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantPointDesserte:
+      name: identifiant_point_desserte
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantPointConsommation:
+      name: identifiant_point_consommation
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantCompteur:
+      name: identifiant_compteur
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantAffectation:
+      name: identifiant_affectation
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantReleve:
+      name: identifiant_releve
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantFacture:
+      name: identifiant_facture
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdentifiantPaiement:
+      name: identifiant_paiement
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+    IfMatch:
+      name: If-Match
+      in: header
+      required: true
+      description: Version attendue de la ressource.
+      schema:
+        type: string
+        pattern: ^"[1-9][0-9]*"$
+    XCorrelationId:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+  responses:
+    RequeteInvalide:
+      description: Requête invalide.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    AuthentificationRequise:
+      description: Authentification requise.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    DroitInsuffisant:
+      description: Droit insuffisant.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    RessourceAbsente:
+      description: Ressource absente.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    ConflitMetier:
+      description: Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    PreconditionVersion:
+      description: Version If-Match non satisfaite.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+    ErreurInterne:
+      description: Erreur interne sans information sensible.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErreurApi'
+  examples:
+    personne_physique:
+      summary: Création d’une personne physique
+      value:
+        categorie: PERSONNE_PHYSIQUE
+        personne_physique:
+          nom: Martin
+          prenoms: Camille
+    personne_morale:
+      summary: Création d’une personne morale
+      value:
+        categorie: PERSONNE_MORALE
+        personne_morale:
+          raison_sociale: Atelier de l'Anjou
+          siret: '12345678901234'
+          forme_juridique: SAS
+    ouverture:
+      summary: Ouverture d’un contrat
+      value:
+        date_effet: '2026-09-01T00:00:00Z'
+        identifiant_point_consommation: 44444444-4444-4444-8444-444444444444
+        participants:
+          - identifiant_tiers: 11111111-1111-4111-8111-111111111111
+            role_contractuel: TITULAIRE
+            principal: true
+            date_debut_validite: '2026-09-01T00:00:00Z'
+    mutation:
+      summary: Mutation vers un nouveau titulaire
+      value:
+        identifiant_tiers_entrant: 55555555-5555-4555-8555-555555555555
+        date_mutation: '2026-10-01T08:00:00Z'
+        index_sortie: 512.75
+    remplacement:
+      summary: Remplacement d’un compteur
+      value:
+        identifiant_nouveau_compteur: 66666666-6666-4666-8666-666666666666
+        date_remplacement: '2026-09-15T09:30:00Z'
+        index_depose: 920.5
+        index_pose: 0
+    saisie_releve:
+      summary: Saisie d’une relève
+      value:
+        identifiant_compteur: 66666666-6666-4666-8666-666666666666
+        valeur_index: 486.125
+        date_mesure: '2026-09-30T08:15:00Z'
+        origine: MANUELLE
+        estimation: false
+    correction_releve:
+      summary: Correction par nouvelle occurrence
+      value:
+        identifiant_compteur: 66666666-6666-4666-8666-666666666666
+        valeur_index: 486.225
+        date_mesure: '2026-09-30T08:15:00Z'
+        origine: CORRECTION
+        estimation: false
+        motif_correction: Erreur de transcription
+    emission:
+      summary: Émission d’une facture
+      value:
+        identifiant_facture: 99999999-9999-4999-8999-999999999999
+        version: 2
+        numero: FAC-2026-000321
+        identifiant_contrat: 33333333-3333-4333-8333-333333333333
+        type_piece: FACTURE
+        periode_debut: '2026-08-01'
+        periode_fin: '2026-08-31'
+        statut: EMISE
+        montant_ht: 35.5
+        montant_taxe: 7.1
+        montant_ttc: 42.6
+    imputation:
+      summary: Imputation sur deux factures
+      value:
+        imputations:
+          - identifiant_facture: 99999999-9999-4999-8999-999999999999
+            montant: 42.6
+          - identifiant_facture: dddddddd-dddd-4ddd-8ddd-dddddddddddd
+            montant: 27.4

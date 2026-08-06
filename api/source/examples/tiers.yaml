@@ -1,0 +1,16 @@
+personne_physique:
+  summary: Création d’une personne physique
+  value:
+    categorie: PERSONNE_PHYSIQUE
+    personne_physique: {nom: Martin, prenoms: Camille}
+personne_morale:
+  summary: Création d’une personne morale
+  value:
+    categorie: PERSONNE_MORALE
+    personne_morale: {raison_sociale: Atelier de l'Anjou, siret: '12345678901234', forme_juridique: SAS}
+sans_specialisation_invalide:
+  summary: Exemple invalide sans spécialisation
+  value: {categorie: PERSONNE_PHYSIQUE}
+double_specialisation_invalide:
+  summary: Exemple invalide avec deux spécialisations
+  value: {categorie: PERSONNE_PHYSIQUE, personne_physique: {nom: Martin, prenoms: Camille}, personne_morale: {raison_sociale: Invalide}}

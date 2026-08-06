@@ -1,0 +1,12 @@
+<configuration>
+  <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <customFields>{"service":"hydrosea-app"}</customFields>
+      <includeMdcKeyName>correlation_id</includeMdcKeyName>
+      <includeMdcKeyName>utilisateur</includeMdcKeyName>
+      <includeMdcKeyName>operation</includeMdcKeyName>
+      <includeMdcKeyName>environnement</includeMdcKeyName>
+    </encoder>
+  </appender>
+  <root level="INFO"><appender-ref ref="JSON"/></root>
+</configuration>

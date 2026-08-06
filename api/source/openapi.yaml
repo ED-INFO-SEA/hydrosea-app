@@ -1,0 +1,140 @@
+openapi: 3.1.0
+info:
+  title: API du noyau HydroSEA
+  version: 1.0.0
+  description: Contrats REST des Services métier du noyau ; les règles restent définies par les RM.
+servers:
+  - url: https://api.example.hydrosea.fr
+    description: URL illustrative, à configurer
+tags:
+  - {name: Tiers, description: Identités physiques et morales}
+  - {name: Contrats, description: Contrats d’abonnement et participations}
+  - {name: Points, description: Points de desserte et de consommation}
+  - {name: Comptage, description: 'Compteurs, affectations et relèves'}
+  - {name: Facturation, description: Calcul et cycle des factures}
+  - {name: Paiements, description: 'Paiements, imputations et remboursements'}
+  - {name: Audit, description: Lecture minimisée des événements métier}
+paths:
+  /v1/tiers: {$ref: './paths/tiers.yaml#/tiers'}
+  /v1/tiers/{identifiant_tiers}: {$ref: './paths/tiers.yaml#/tiers_identifiant'}
+  /v1/tiers/{identifiant_tiers}/fusionner: {$ref: './paths/tiers.yaml#/tiers_fusionner'}
+  /v1/tiers/{identifiant_tiers}/archiver: {$ref: './paths/tiers.yaml#/tiers_archiver'}
+  /v1/tiers/{identifiant_tiers}/reactiver: {$ref: './paths/tiers.yaml#/tiers_reactiver'}
+  /v1/contrats-abonnement: {$ref: './paths/contrats.yaml#/contrats'}
+  /v1/contrats-abonnement/{identifiant_contrat}: {$ref: './paths/contrats.yaml#/contrat'}
+  /v1/contrats-abonnement/{identifiant_contrat}/valider: {$ref: './paths/contrats.yaml#/valider'}
+  /v1/contrats-abonnement/{identifiant_contrat}/activer: {$ref: './paths/contrats.yaml#/activer'}
+  /v1/contrats-abonnement/{identifiant_contrat}/suspendre: {$ref: './paths/contrats.yaml#/suspendre'}
+  /v1/contrats-abonnement/{identifiant_contrat}/reactiver: {$ref: './paths/contrats.yaml#/reactiver'}
+  /v1/contrats-abonnement/{identifiant_contrat}/resilier: {$ref: './paths/contrats.yaml#/resilier'}
+  /v1/contrats-abonnement/{identifiant_contrat}/muter: {$ref: './paths/contrats.yaml#/muter'}
+  /v1/contrats-abonnement/{identifiant_contrat}/participants: {$ref: './paths/contrats.yaml#/participants'}
+  /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}: {$ref: './paths/contrats.yaml#/participant'}
+  /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}/cloturer: {$ref: './paths/contrats.yaml#/cloturer_participant'}
+  /v1/points-desserte: {$ref: './paths/points.yaml#/points_desserte'}
+  /v1/points-desserte/{identifiant_point_desserte}: {$ref: './paths/points.yaml#/point_desserte'}
+  /v1/points-desserte/synchroniser-sig: {$ref: './paths/points.yaml#/synchroniser_sig'}
+  /v1/points-consommation: {$ref: './paths/points.yaml#/points_consommation'}
+  /v1/points-consommation/{identifiant_point_consommation}: {$ref: './paths/points.yaml#/point_consommation'}
+  /v1/points-consommation/{identifiant_point_consommation}/ouvrir: {$ref: './paths/points.yaml#/ouvrir'}
+  /v1/points-consommation/{identifiant_point_consommation}/fermer: {$ref: './paths/points.yaml#/fermer'}
+  /v1/points-consommation/{identifiant_point_consommation}/reouvrir: {$ref: './paths/points.yaml#/reouvrir'}
+  /v1/compteurs: {$ref: './paths/comptage.yaml#/compteurs'}
+  /v1/compteurs/{identifiant_compteur}: {$ref: './paths/comptage.yaml#/compteur'}
+  /v1/compteurs/{identifiant_compteur}/poser: {$ref: './paths/comptage.yaml#/poser'}
+  /v1/compteurs/{identifiant_compteur}/deposer: {$ref: './paths/comptage.yaml#/deposer'}
+  /v1/compteurs/{identifiant_compteur}/remplacer: {$ref: './paths/comptage.yaml#/remplacer'}
+  /v1/compteurs/{identifiant_compteur}/reformer: {$ref: './paths/comptage.yaml#/reformer'}
+  /v1/affectations-compteur: {$ref: './paths/comptage.yaml#/affectations'}
+  /v1/affectations-compteur/{identifiant_affectation}: {$ref: './paths/comptage.yaml#/affectation'}
+  /v1/affectations-compteur/{identifiant_affectation}/cloturer: {$ref: './paths/comptage.yaml#/cloturer_affectation'}
+  /v1/releves: {$ref: './paths/comptage.yaml#/releves'}
+  /v1/releves/importer: {$ref: './paths/comptage.yaml#/importer_releves'}
+  /v1/releves/{identifiant_releve}: {$ref: './paths/comptage.yaml#/releve'}
+  /v1/releves/{identifiant_releve}/valider: {$ref: './paths/comptage.yaml#/valider_releve'}
+  /v1/releves/{identifiant_releve}/rejeter: {$ref: './paths/comptage.yaml#/rejeter_releve'}
+  /v1/releves/{identifiant_releve}/corriger: {$ref: './paths/comptage.yaml#/corriger_releve'}
+  /v1/factures: {$ref: './paths/facturation.yaml#/factures'}
+  /v1/factures/calculer: {$ref: './paths/facturation.yaml#/calculer'}
+  /v1/factures/{identifiant_facture}: {$ref: './paths/facturation.yaml#/facture'}
+  /v1/factures/{identifiant_facture}/emettre: {$ref: './paths/facturation.yaml#/emettre'}
+  /v1/factures/{identifiant_facture}/corriger: {$ref: './paths/facturation.yaml#/corriger'}
+  /v1/factures/{identifiant_facture}/annuler: {$ref: './paths/facturation.yaml#/annuler'}
+  /v1/factures/{identifiant_facture}/lignes: {$ref: './paths/facturation.yaml#/lignes'}
+  /v1/factures/{identifiant_facture}/releves: {$ref: './paths/facturation.yaml#/releves_facture'}
+  /v1/paiements: {$ref: './paths/paiements.yaml#/paiements'}
+  /v1/paiements/{identifiant_paiement}: {$ref: './paths/paiements.yaml#/paiement'}
+  /v1/paiements/{identifiant_paiement}/imputer: {$ref: './paths/paiements.yaml#/imputer'}
+  /v1/paiements/{identifiant_paiement}/contrepasser-imputation: {$ref: './paths/paiements.yaml#/contrepasser'}
+  /v1/paiements/{identifiant_paiement}/rembourser: {$ref: './paths/paiements.yaml#/rembourser'}
+  /v1/evenements-metier: {$ref: './paths/audit.yaml#/evenements'}
+components:
+  schemas:
+    Tiers: {$ref: './schemas/noyau.yaml#/components/schemas/Tiers'}
+    PersonnePhysique: {$ref: './schemas/noyau.yaml#/components/schemas/PersonnePhysique'}
+    PersonneMorale: {$ref: './schemas/noyau.yaml#/components/schemas/PersonneMorale'}
+    Coordonnee: {$ref: './schemas/noyau.yaml#/components/schemas/Coordonnee'}
+    Adresse: {$ref: './schemas/noyau.yaml#/components/schemas/Adresse'}
+    ContratAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/ContratAbonnement'}
+    ParticipationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ParticipationContrat'}
+    PointDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/PointDesserte'}
+    PointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/PointConsommation'}
+    Compteur: {$ref: './schemas/noyau.yaml#/components/schemas/Compteur'}
+    AffectationCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/AffectationCompteur'}
+    Releve: {$ref: './schemas/noyau.yaml#/components/schemas/Releve'}
+    BilanImportReleves: {$ref: './schemas/noyau.yaml#/components/schemas/BilanImportReleves'}
+    Facture: {$ref: './schemas/noyau.yaml#/components/schemas/Facture'}
+    LigneFacture: {$ref: './schemas/noyau.yaml#/components/schemas/LigneFacture'}
+    Paiement: {$ref: './schemas/noyau.yaml#/components/schemas/Paiement'}
+    ImputationPaiement: {$ref: './schemas/noyau.yaml#/components/schemas/ImputationPaiement'}
+    EvenementMetier: {$ref: './schemas/noyau.yaml#/components/schemas/EvenementMetier'}
+    ErreurApi: {$ref: './schemas/noyau.yaml#/components/schemas/ErreurApi'}
+    CreerTiers: {$ref: './schemas/noyau.yaml#/components/schemas/CreerTiers'}
+    ModifierTiers: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierTiers'}
+    CreerContratAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/CreerContratAbonnement'}
+    CreerParticipationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/CreerParticipationContrat'}
+    ModifierContratAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierContratAbonnement'}
+    CreerPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/CreerPointConsommation'}
+    ModifierPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierPointConsommation'}
+    CreerCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/CreerCompteur'}
+    ModifierCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierCompteur'}
+    CreerAffectationCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/CreerAffectationCompteur'}
+    CreerReleve: {$ref: './schemas/noyau.yaml#/components/schemas/CreerReleve'}
+    CorrigerReleve: {$ref: './schemas/noyau.yaml#/components/schemas/CorrigerReleve'}
+    CalculerFacture: {$ref: './schemas/noyau.yaml#/components/schemas/CalculerFacture'}
+    CreerPaiement: {$ref: './schemas/noyau.yaml#/components/schemas/CreerPaiement'}
+    ImputerPaiement: {$ref: './schemas/noyau.yaml#/components/schemas/ImputerPaiement'}
+    PageTiers: {$ref: './schemas/noyau.yaml#/components/schemas/PageTiers'}
+    PageContratsAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/PageContratsAbonnement'}
+    PagePointsDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/PagePointsDesserte'}
+    PagePointsConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/PagePointsConsommation'}
+    PageCompteurs: {$ref: './schemas/noyau.yaml#/components/schemas/PageCompteurs'}
+    PageAffectationsCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/PageAffectationsCompteur'}
+    PageReleves: {$ref: './schemas/noyau.yaml#/components/schemas/PageReleves'}
+    PageFactures: {$ref: './schemas/noyau.yaml#/components/schemas/PageFactures'}
+    PagePaiements: {$ref: './schemas/noyau.yaml#/components/schemas/PagePaiements'}
+    PageEvenementsMetier: {$ref: './schemas/noyau.yaml#/components/schemas/PageEvenementsMetier'}
+  securitySchemes:
+    oauth2: {$ref: './security/oauth2.yaml#/components/securitySchemes/oauth2'}
+  parameters:
+    IdentifiantTiers: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantTiers'}
+    IdentifiantContrat: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantContrat'}
+    IdentifiantParticipation: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantParticipation'}
+    IdentifiantPointDesserte: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantPointDesserte'}
+    IdentifiantPointConsommation: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantPointConsommation'}
+    IdentifiantCompteur: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantCompteur'}
+    IdentifiantAffectation: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantAffectation'}
+    IdentifiantReleve: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantReleve'}
+    IdentifiantFacture: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantFacture'}
+    IdentifiantPaiement: {$ref: './schemas/commun.yaml#/components/parameters/IdentifiantPaiement'}
+    IdempotencyKey: {$ref: './schemas/commun.yaml#/components/parameters/IdempotencyKey'}
+    IfMatch: {$ref: './schemas/commun.yaml#/components/parameters/IfMatch'}
+    XCorrelationId: {$ref: './schemas/commun.yaml#/components/parameters/XCorrelationId'}
+  responses:
+    RequeteInvalide: {$ref: './schemas/commun.yaml#/components/responses/RequeteInvalide'}
+    AuthentificationRequise: {$ref: './schemas/commun.yaml#/components/responses/AuthentificationRequise'}
+    DroitInsuffisant: {$ref: './schemas/commun.yaml#/components/responses/DroitInsuffisant'}
+    RessourceAbsente: {$ref: './schemas/commun.yaml#/components/responses/RessourceAbsente'}
+    ConflitMetier: {$ref: './schemas/commun.yaml#/components/responses/ConflitMetier'}
+    PreconditionVersion: {$ref: './schemas/commun.yaml#/components/responses/PreconditionVersion'}
+    ErreurInterne: {$ref: './schemas/commun.yaml#/components/responses/ErreurInterne'}

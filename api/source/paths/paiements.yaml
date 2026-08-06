@@ -1,0 +1,88 @@
+x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteInvalide'}, '401': {$ref: '../openapi.yaml#/components/responses/AuthentificationRequise'}, '403': {$ref: '../openapi.yaml#/components/responses/DroitInsuffisant'}, '409': {$ref: '../openapi.yaml#/components/responses/ConflitMetier'}, '500': {$ref: '../openapi.yaml#/components/responses/ErreurInterne'}}
+x-erreur-cible: &erreur_cible {<<: *erreur, '404': {$ref: '../openapi.yaml#/components/responses/RessourceAbsente'}}
+x-erreur-version: &erreur_version {<<: *erreur_cible, '412': {$ref: '../openapi.yaml#/components/responses/PreconditionVersion'}}
+x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+paiements:
+  get:
+    operationId: rechercher_paiements
+    summary: Rechercher des paiements
+    description: Recherche paginée par référence, statut, Tiers payeur ou période.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}, {name: identifiant_tiers, in: query, schema: {type: string, format: uuid}}]
+    responses: {'200': {description: Page de paiements, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PagePaiements'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-PAI-001]
+    x-hydrosea-rm: [RM-PAI]
+    x-hydrosea-evt: [EVT-PAI-001]
+    x-hydrosea-tables: [pai.paiement]
+  post:
+    operationId: enregistrer_paiement
+    summary: Enregistrer un paiement
+    description: Enregistre un paiement idempotent par clé et référence externe.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:ecriture']}]
+    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerPaiement'}}}}
+    responses: {'201': {description: Paiement enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Paiement'}}}}, <<: *erreur}
+    x-hydrosea-bs: [BS-PAI-001]
+    x-hydrosea-rm: [RM-PAI]
+    x-hydrosea-evt: [EVT-PAI-001]
+    x-hydrosea-tables: [pai.paiement]
+paiement:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
+  get:
+    operationId: consulter_paiement
+    summary: Consulter un paiement
+    description: Retourne le paiement et son montant restant disponible.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:lecture']}]
+    responses: {'200': {description: Paiement trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Paiement'}}}}, <<: *erreur_cible}
+    x-hydrosea-bs: [BS-PAI-001]
+    x-hydrosea-rm: [RM-PAI]
+    x-hydrosea-evt: [EVT-PAI-001]
+    x-hydrosea-tables: [pai.paiement, pai.imputation_paiement]
+imputer:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
+  post:
+    operationId: imputer_paiement
+    summary: Imputer un paiement
+    description: Répartit le montant sur plusieurs factures sous contrôle bilatéral des plafonds.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ImputerPaiement'}, examples: {imputation: {$ref: '../examples/paiements.yaml#/imputation'}}}}}
+    responses: {'200': {description: Imputations validées, content: {application/json: {schema: {type: array, items: {$ref: '../openapi.yaml#/components/schemas/ImputationPaiement'}}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-PAI-001]
+    x-hydrosea-rm: [RM-PAI, BR-008]
+    x-hydrosea-evt: [EVT-PAI-002]
+    x-hydrosea-tables: [pai.paiement, pai.imputation_paiement, fac.facture]
+contrepasser:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
+  post:
+    operationId: contrepasser_imputation_paiement
+    summary: Contrepasser une imputation de paiement
+    description: Crée une contrepassation identique sans supprimer l’imputation d’origine.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [identifiant_imputation, motif], properties: {identifiant_imputation: {type: string, format: uuid}, motif: {type: string}}}}}}
+    responses: {'201': {description: Contrepassation créée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ImputationPaiement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-PAI-001]
+    x-hydrosea-rm: [RM-PAI]
+    x-hydrosea-evt: [EVT-PAI-003]
+    x-hydrosea-tables: [pai.imputation_paiement]
+rembourser:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
+  post:
+    operationId: rembourser_paiement
+    summary: Rembourser un paiement
+    description: Commande un décaissement lié ; les conditions définitives relèvent de BS-PAI-002.
+    tags: [Paiements]
+    security: [{oauth2: ['paiements:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [montant, motif], properties: {montant: {type: number, exclusiveMinimum: 0}, motif: {type: string}}}}}}
+    responses: {'201': {description: Remboursement enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Paiement'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-PAI-002]
+    x-hydrosea-rm: [RM-PAI]
+    x-hydrosea-evt: [EVT-PAI-004]
+    x-hydrosea-tables: [pai.paiement]

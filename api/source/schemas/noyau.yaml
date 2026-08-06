@@ -1,0 +1,311 @@
+components:
+  schemas:
+    IdentiteVersionnee:
+      type: object
+      required: [version]
+      properties:
+        version: {type: integer, minimum: 1, readOnly: true}
+        date_creation: {type: string, format: date-time, readOnly: true}
+        date_modification: {type: string, format: date-time, readOnly: true}
+    Tiers:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_tiers, reference, categorie, statut]
+          properties:
+            identifiant_tiers: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, maxLength: 40, example: TIE-000042, readOnly: true}
+            categorie: {type: string, enum: [PERSONNE_PHYSIQUE, PERSONNE_MORALE], readOnly: true}
+            statut: {type: string, example: ACTIF, readOnly: true}
+            personne_physique: {$ref: '#/components/schemas/PersonnePhysique'}
+            personne_morale: {$ref: '#/components/schemas/PersonneMorale'}
+            coordonnees: {type: array, items: {$ref: '#/components/schemas/Coordonnee'}}
+      description: Représentation minimisée de BO-001. Voir le dictionnaire de données et RM-TIE.
+    PersonnePhysique:
+      type: object
+      required: [nom, prenoms]
+      properties:
+        nom: {type: string, example: Martin}
+        nom_usage: {type: string}
+        prenoms: {type: string, example: Camille}
+        date_naissance: {type: string, format: date, writeOnly: true}
+    PersonneMorale:
+      type: object
+      required: [raison_sociale]
+      properties:
+        raison_sociale: {type: string, example: Atelier de l'Anjou}
+        siret: {type: string, pattern: '^[0-9]{14}$', example: '12345678901234'}
+        forme_juridique: {type: string, example: SAS}
+    Coordonnee:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [type_coordonnees, valeur, principale]
+          properties:
+            identifiant_coordonnees: {type: string, format: uuid, readOnly: true}
+            type_coordonnees: {type: string, example: COURRIEL}
+            valeur: {type: string, example: camille.martin@example.fr}
+            principale: {type: boolean}
+            date_debut_validite: {type: string, format: date-time}
+            date_fin_validite: {type: string, format: date-time}
+    Adresse:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [reference, commune]
+          properties:
+            identifiant_adresse: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, example: ADR-49007-001}
+            numero_voie: {type: string}
+            nom_voie: {type: string, example: rue de la Loire}
+            complement: {type: string}
+            code_postal: {type: string, pattern: '^[0-9]{5}$', example: '49000'}
+            commune: {type: string, example: Angers}
+    ContratAbonnement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_contrat, reference, statut]
+          properties:
+            identifiant_contrat: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, example: CTR-2026-000128, readOnly: true}
+            statut: {type: string, example: BROUILLON, readOnly: true}
+            date_effet: {type: string, format: date-time}
+            date_fin: {type: string, format: date-time}
+            date_resiliation: {type: string, format: date-time}
+            identifiant_point_consommation_courant: {type: string, format: uuid, readOnly: true, description: Projection de la liaison temporelle abo.liaison_contrat_consommation à l’instant courant.}
+            participants: {type: array, items: {$ref: '#/components/schemas/ParticipationContrat'}}
+    ParticipationContrat:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_tiers, role_contractuel, principal, date_debut_validite]
+          properties:
+            identifiant_participation: {type: string, format: uuid, readOnly: true}
+            identifiant_tiers: {type: string, format: uuid}
+            role_contractuel: {type: string, example: TITULAIRE}
+            principal: {type: boolean}
+            responsabilite_financiere: {type: boolean}
+            date_debut_validite: {type: string, format: date-time}
+            date_fin_validite: {type: string, format: date-time}
+            motif_fin: {type: string}
+    PointDesserte:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_point_desserte, reference, identifiant_sig, statut]
+          properties:
+            identifiant_point_desserte: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, example: PD-004201}
+            identifiant_sig: {type: string, example: SIG-PD-88421}
+            statut: {type: string, example: ACTIF}
+            version_sig: {type: string, readOnly: true}
+            date_synchronisation: {type: string, format: date-time, readOnly: true}
+      description: Patrimoine en lecture ; le SIG reste maître des géométries.
+    PointConsommation:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_point_consommation, reference, statut]
+          properties:
+            identifiant_point_consommation: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, example: PC-009842, readOnly: true}
+            statut: {type: string, enum: [PREPARE, OUVERT, FERME], readOnly: true}
+            usage: {type: string, example: DOMESTIQUE}
+            identifiant_adresse: {type: string, format: uuid}
+            adresse: {$ref: '#/components/schemas/Adresse'}
+            identifiant_point_desserte_courant: {type: string, format: uuid, readOnly: true, description: Projection de des.liaison_desserte_consommation à l’instant courant.}
+    Compteur:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_compteur, numero_serie, statut]
+          properties:
+            identifiant_compteur: {type: string, format: uuid, readOnly: true}
+            numero_serie: {type: string, example: CPT-24-778899, readOnly: true}
+            statut: {type: string, example: DISPONIBLE, readOnly: true}
+            fabricant: {type: string, example: Hydrométrie France}
+            modele: {type: string, example: H100}
+            calibre: {type: string, example: DN15}
+    AffectationCompteur:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_compteur, identifiant_point_consommation, date_debut_validite, statut]
+          properties:
+            identifiant_affectation: {type: string, format: uuid, readOnly: true}
+            identifiant_compteur: {type: string, format: uuid}
+            identifiant_point_consommation: {type: string, format: uuid}
+            date_debut_validite: {type: string, format: date-time}
+            date_fin_validite: {type: string, format: date-time}
+            index_pose: {type: number, minimum: 0, example: 125.3}
+            index_depose: {type: number, minimum: 0}
+            statut: {type: string, example: ACTIVE}
+    Releve:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_compteur, valeur_index, date_mesure, origine, statut]
+          properties:
+            identifiant_releve: {type: string, format: uuid, readOnly: true}
+            identifiant_compteur: {type: string, format: uuid}
+            identifiant_affectation: {type: string, format: uuid}
+            valeur_index: {type: number, minimum: 0, example: 486.125}
+            date_mesure: {type: string, format: date-time}
+            origine: {type: string, example: MANUELLE}
+            statut: {type: string, example: A_CONTROLER}
+            estimation: {type: boolean}
+            identifiant_releve_origine: {type: string, format: uuid}
+    BilanImportReleves:
+      type: object
+      required: [identifiant_import, nombre_lignes, nombre_acceptees, nombre_rejetees, resultats]
+      properties:
+        identifiant_import: {type: string, format: uuid}
+        nombre_lignes: {type: integer, minimum: 0}
+        nombre_acceptees: {type: integer, minimum: 0}
+        nombre_rejetees: {type: integer, minimum: 0}
+        resultats:
+          type: array
+          items:
+            type: object
+            required: [numero_ligne, statut]
+            properties:
+              numero_ligne: {type: integer, minimum: 1}
+              statut: {type: string, enum: [ACCEPTEE, REJETEE]}
+              erreur: {$ref: '#/components/schemas/ErreurApi'}
+    Facture:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_facture, numero, identifiant_contrat, type_piece, periode_debut, periode_fin, statut, montant_ttc]
+          properties:
+            identifiant_facture: {type: string, format: uuid, readOnly: true}
+            numero: {type: string, example: FAC-2026-000321, readOnly: true}
+            identifiant_contrat: {type: string, format: uuid}
+            type_piece: {type: string, enum: [FACTURE, AVOIR, CORRECTION]}
+            identifiant_facture_origine: {type: string, format: uuid}
+            periode_debut: {type: string, format: date}
+            periode_fin: {type: string, format: date}
+            statut: {type: string, example: BROUILLON}
+            montant_ht: {type: number, minimum: 0, multipleOf: 0.01}
+            montant_taxe: {type: number, minimum: 0, multipleOf: 0.01}
+            montant_ttc: {type: number, minimum: 0, multipleOf: 0.01, example: 42.6}
+            lignes: {type: array, items: {$ref: '#/components/schemas/LigneFacture'}}
+    LigneFacture:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [ordre, nature, libelle, quantite, prix_unitaire, montant_ttc]
+          properties:
+            identifiant_ligne_facture: {type: string, format: uuid, readOnly: true}
+            ordre: {type: integer, minimum: 1}
+            nature: {type: string, example: CONSOMMATION}
+            libelle: {type: string, example: Consommation d'eau potable}
+            quantite: {type: number, minimum: 0}
+            prix_unitaire: {type: number, minimum: 0}
+            montant_ttc: {type: number, minimum: 0}
+    Paiement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_paiement, reference, sens, montant, moyen, date_valeur, statut, origine]
+          properties:
+            identifiant_paiement: {type: string, format: uuid, readOnly: true}
+            reference: {type: string, example: PAI-2026-000987, readOnly: true}
+            identifiant_tiers_payeur: {type: string, format: uuid}
+            sens: {type: string, enum: [ENCAISSEMENT, DECAISSEMENT]}
+            montant: {type: number, exclusiveMinimum: 0, example: 70.0}
+            montant_disponible: {type: number, minimum: 0, readOnly: true}
+            moyen: {type: string, example: VIREMENT}
+            date_valeur: {type: string, format: date}
+            reference_externe: {type: string, example: VIR-884401}
+            statut: {type: string, example: RECU}
+            origine: {type: string, example: BANQUE}
+    ImputationPaiement:
+      allOf:
+        - $ref: '#/components/schemas/IdentiteVersionnee'
+        - type: object
+          required: [identifiant_paiement, identifiant_facture, montant, statut]
+          properties:
+            identifiant_imputation: {type: string, format: uuid, readOnly: true}
+            identifiant_paiement: {type: string, format: uuid}
+            identifiant_facture: {type: string, format: uuid}
+            montant: {type: number, exclusiveMinimum: 0}
+            date_imputation: {type: string, format: date-time, readOnly: true}
+            identifiant_imputation_origine: {type: string, format: uuid}
+            statut: {type: string, enum: [VALIDEE, CONTREPASSEE]}
+    EvenementMetier:
+      type: object
+      readOnly: true
+      required: [identifiant_evenement, type_evenement, type_agregat, identifiant_agregat, date_metier]
+      properties:
+        identifiant_evenement: {type: string, format: uuid}
+        type_evenement: {type: string, example: evt_ctr_contrat_active}
+        type_agregat: {type: string, example: contrat_abonnement}
+        identifiant_agregat: {type: string, format: uuid}
+        date_metier: {type: string, format: date-time}
+        identifiant_correlation: {type: string, format: uuid}
+      description: Vue contrôlée et minimisée ; aucune écriture ni charge interne complète.
+    ErreurApi:
+      type: object
+      required: [code, titre, detail, statut_http, identifiant_correlation, date_erreur]
+      properties:
+        code: {type: string, example: SYS-CONFLIT-VERSION}
+        titre: {type: string, example: Version obsolète}
+        detail: {type: string}
+        statut_http: {type: integer, minimum: 400, maximum: 599}
+        identifiant_correlation: {type: string, format: uuid}
+        date_erreur: {type: string, format: date-time}
+        champ: {type: string}
+        regle_metier: {type: string, example: RM-CTR-001}
+        service_metier: {type: string, example: BS-CTR-002}
+        erreurs_enfants: {type: array, items: {$ref: '#/components/schemas/ErreurApi'}}
+    SoclePagination:
+      type: object
+      required: [page, taille_page, nombre_total]
+      properties:
+        page: {type: integer, minimum: 1}
+        taille_page: {type: integer, minimum: 1, maximum: 100}
+        nombre_total: {type: integer, minimum: 0}
+        lien_precedent: {type: string, format: uri}
+        lien_suivant: {type: string, format: uri}
+    PageTiers: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/Tiers'}}}}]}
+    PageContratsAbonnement: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/ContratAbonnement'}}}}]}
+    PagePointsDesserte: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/PointDesserte'}}}}]}
+    PagePointsConsommation: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/PointConsommation'}}}}]}
+    PageCompteurs: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/Compteur'}}}}]}
+    PageAffectationsCompteur: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/AffectationCompteur'}}}}]}
+    PageReleves: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/Releve'}}}}]}
+    PageFactures: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/Facture'}}}}]}
+    PagePaiements: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/Paiement'}}}}]}
+    PageEvenementsMetier: {allOf: [{$ref: '#/components/schemas/SoclePagination'}, {type: object, required: [resultats], properties: {resultats: {type: array, items: {$ref: '#/components/schemas/EvenementMetier'}}}}]}
+
+    CreerTiers:
+      oneOf:
+        - $ref: '#/components/schemas/CreerTiersPersonnePhysique'
+        - $ref: '#/components/schemas/CreerTiersPersonneMorale'
+      discriminator: {propertyName: categorie, mapping: {PERSONNE_PHYSIQUE: '#/components/schemas/CreerTiersPersonnePhysique', PERSONNE_MORALE: '#/components/schemas/CreerTiersPersonneMorale'}}
+    CreerTiersPersonnePhysique:
+      type: object
+      additionalProperties: false
+      required: [categorie, personne_physique]
+      properties: {categorie: {const: PERSONNE_PHYSIQUE}, personne_physique: {$ref: '#/components/schemas/PersonnePhysique'}}
+    CreerTiersPersonneMorale:
+      type: object
+      additionalProperties: false
+      required: [categorie, personne_morale]
+      properties: {categorie: {const: PERSONNE_MORALE}, personne_morale: {$ref: '#/components/schemas/PersonneMorale'}}
+    ModifierTiers: {type: object, additionalProperties: false, minProperties: 1, properties: {personne_physique: {$ref: '#/components/schemas/PersonnePhysique'}, personne_morale: {$ref: '#/components/schemas/PersonneMorale'}}}
+    CreerParticipationContrat: {type: object, additionalProperties: false, required: [identifiant_tiers, role_contractuel, principal, date_debut_validite], properties: {identifiant_tiers: {type: string, format: uuid}, role_contractuel: {type: string}, principal: {type: boolean}, responsabilite_financiere: {type: boolean}, date_debut_validite: {type: string, format: date-time}}}
+    CreerContratAbonnement: {type: object, additionalProperties: false, required: [date_effet, identifiant_point_consommation, participants], properties: {date_effet: {type: string, format: date-time}, date_fin: {type: string, format: date-time}, identifiant_point_consommation: {type: string, format: uuid}, participants: {type: array, minItems: 1, items: {$ref: '#/components/schemas/CreerParticipationContrat'}}}}
+    ModifierContratAbonnement: {type: object, additionalProperties: false, minProperties: 1, properties: {date_effet: {type: string, format: date-time}, date_fin: {type: string, format: date-time}}}
+    CreerPointConsommation: {type: object, additionalProperties: false, required: [usage, identifiant_point_desserte, date_debut_validite], properties: {usage: {type: string}, identifiant_adresse: {type: string, format: uuid}, identifiant_point_desserte: {type: string, format: uuid}, date_debut_validite: {type: string, format: date-time}}}
+    ModifierPointConsommation: {type: object, additionalProperties: false, minProperties: 1, properties: {usage: {type: string}, identifiant_adresse: {type: string, format: uuid}}}
+    CreerCompteur: {type: object, additionalProperties: false, required: [numero_serie], properties: {numero_serie: {type: string}, fabricant: {type: string}, modele: {type: string}, calibre: {type: string}}}
+    ModifierCompteur: {type: object, additionalProperties: false, minProperties: 1, properties: {fabricant: {type: string}, modele: {type: string}, calibre: {type: string}}}
+    CreerAffectationCompteur: {type: object, additionalProperties: false, required: [identifiant_compteur, identifiant_point_consommation, date_debut_validite], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_point_consommation: {type: string, format: uuid}, date_debut_validite: {type: string, format: date-time}, index_pose: {type: number, minimum: 0}}}
+    CreerReleve: {type: object, additionalProperties: false, required: [identifiant_compteur, valeur_index, date_mesure, origine], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_affectation: {type: string, format: uuid}, valeur_index: {type: number, minimum: 0}, date_mesure: {type: string, format: date-time}, origine: {type: string}, estimation: {type: boolean}}}
+    CorrigerReleve: {type: object, additionalProperties: false, required: [identifiant_compteur, valeur_index, date_mesure, origine, motif_correction], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_affectation: {type: string, format: uuid}, valeur_index: {type: number, minimum: 0}, date_mesure: {type: string, format: date-time}, origine: {type: string}, estimation: {type: boolean}, motif_correction: {type: string}}}
+    CalculerFacture: {type: object, additionalProperties: false, required: [periode_debut, periode_fin], properties: {periode_debut: {type: string, format: date}, periode_fin: {type: string, format: date}, identifiants_contrats: {type: array, items: {type: string, format: uuid}}}}
+    CreerPaiement: {type: object, additionalProperties: false, required: [sens, montant, moyen, date_valeur, origine], properties: {identifiant_tiers_payeur: {type: string, format: uuid}, sens: {type: string, enum: [ENCAISSEMENT, DECAISSEMENT]}, montant: {type: number, exclusiveMinimum: 0}, moyen: {type: string}, date_valeur: {type: string, format: date}, reference_externe: {type: string}, origine: {type: string}}}
+    ImputerPaiement: {type: object, additionalProperties: false, required: [imputations], properties: {imputations: {type: array, minItems: 1, items: {type: object, additionalProperties: false, required: [identifiant_facture, montant], properties: {identifiant_facture: {type: string, format: uuid}, montant: {type: number, exclusiveMinimum: 0}}}}}}
