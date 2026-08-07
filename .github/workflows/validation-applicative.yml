@@ -115,7 +115,7 @@ jobs:
           timeout 180 sh -c 'until curl -sS http://localhost:8080/actuator/health >/dev/null && curl -fsS http://127.0.0.1:5173 >/dev/null; do sleep 3; done'
       - name: Exécuter preview-0.1.spec.ts
         working-directory: frontend
-        run: npx playwright install --with-deps chromium && npm run test:e2e
+        run: npm run test:e2e
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: always()
         with: {name: captures-preview-0.1, path: frontend/captures-playwright, if-no-files-found: warn}
