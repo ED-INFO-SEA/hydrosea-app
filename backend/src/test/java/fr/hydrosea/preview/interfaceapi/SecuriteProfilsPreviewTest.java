@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
@@ -91,7 +92,7 @@ class SecuriteProfilsPreviewTest {
 
   private static RequestPostProcessor profil(String... portees) {
     var autorites = java.util.Arrays.stream(portees)
-        .map(portee -> new SimpleGrantedAuthority("SCOPE_" + portee)).toList();
+        .<GrantedAuthority>map(portee -> new SimpleGrantedAuthority("SCOPE_" + portee)).toList();
     return jwt().authorities(autorites);
   }
 }
