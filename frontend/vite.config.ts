@@ -9,6 +9,7 @@ export default defineConfig({
         target: 'http://localhost:8080',
         rewrite: (chemin) => chemin.replace(/^\/api/, ''),
       },
+      '/v1': 'http://localhost:8080',
     },
   },
   test: {
