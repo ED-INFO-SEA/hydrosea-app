@@ -26,6 +26,7 @@ paths:
   /v1/contrats-abonnement/{identifiant_contrat}/activer: {$ref: './paths/contrats.yaml#/activer'}
   /v1/contrats-abonnement/{identifiant_contrat}/suspendre: {$ref: './paths/contrats.yaml#/suspendre'}
   /v1/contrats-abonnement/{identifiant_contrat}/reactiver: {$ref: './paths/contrats.yaml#/reactiver'}
+  /v1/contrats-abonnement/{identifiant_contrat}/annuler: {$ref: './paths/contrats.yaml#/annuler'}
   /v1/contrats-abonnement/{identifiant_contrat}/resilier: {$ref: './paths/contrats.yaml#/resilier'}
   /v1/contrats-abonnement/{identifiant_contrat}/muter: {$ref: './paths/contrats.yaml#/muter'}
   /v1/contrats-abonnement/{identifiant_contrat}/participants: {$ref: './paths/contrats.yaml#/participants'}
@@ -33,21 +34,31 @@ paths:
   /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}/cloturer: {$ref: './paths/contrats.yaml#/cloturer_participant'}
   /v1/points-desserte: {$ref: './paths/points.yaml#/points_desserte'}
   /v1/points-desserte/{identifiant_point_desserte}: {$ref: './paths/points.yaml#/point_desserte'}
-  /v1/points-desserte/synchroniser-sig: {$ref: './paths/points.yaml#/synchroniser_sig'}
+  /v1/points-desserte/{identifiant_point_desserte}/synchroniser-sig: {$ref: './paths/points.yaml#/synchroniser_sig'}
+  /v1/points-desserte/{identifiant_point_desserte}/rendre-disponible: {$ref: './paths/points.yaml#/rendre_disponible'}
+  /v1/points-desserte/{identifiant_point_desserte}/rendre-indisponible: {$ref: './paths/points.yaml#/rendre_indisponible'}
+  /v1/points-desserte/{identifiant_point_desserte}/retirer: {$ref: './paths/points.yaml#/retirer_desserte'}
+  /v1/points-desserte/{identifiant_point_desserte}/corriger-localisation: {$ref: './paths/points.yaml#/corriger_localisation_desserte'}
   /v1/points-consommation: {$ref: './paths/points.yaml#/points_consommation'}
   /v1/points-consommation/{identifiant_point_consommation}: {$ref: './paths/points.yaml#/point_consommation'}
   /v1/points-consommation/{identifiant_point_consommation}/ouvrir: {$ref: './paths/points.yaml#/ouvrir'}
   /v1/points-consommation/{identifiant_point_consommation}/fermer: {$ref: './paths/points.yaml#/fermer'}
   /v1/points-consommation/{identifiant_point_consommation}/reouvrir: {$ref: './paths/points.yaml#/reouvrir'}
+  /v1/points-consommation/{identifiant_point_consommation}/rattachements-desserte: {$ref: './paths/points.yaml#/rattacher_desserte'}
+  /v1/points-consommation/{identifiant_point_consommation}/rattachements-desserte/cloturer: {$ref: './paths/points.yaml#/cloturer_rattachement'}
+  /v1/points-consommation/{identifiant_point_consommation}/changer-rattachement-desserte: {$ref: './paths/points.yaml#/changer_rattachement'}
+  /v1/points-consommation/{identifiant_point_consommation}/affecter-tournee: {$ref: './paths/points.yaml#/affecter_tournee'}
+  /v1/points-consommation/{identifiant_point_consommation}/corriger-adresse: {$ref: './paths/points.yaml#/corriger_adresse'}
   /v1/compteurs: {$ref: './paths/comptage.yaml#/compteurs'}
   /v1/compteurs/{identifiant_compteur}: {$ref: './paths/comptage.yaml#/compteur'}
   /v1/compteurs/{identifiant_compteur}/poser: {$ref: './paths/comptage.yaml#/poser'}
   /v1/compteurs/{identifiant_compteur}/deposer: {$ref: './paths/comptage.yaml#/deposer'}
   /v1/compteurs/{identifiant_compteur}/remplacer: {$ref: './paths/comptage.yaml#/remplacer'}
   /v1/compteurs/{identifiant_compteur}/reformer: {$ref: './paths/comptage.yaml#/reformer'}
+  /v1/compteurs/{identifiant_compteur}/mettre-en-controle: {$ref: './paths/comptage.yaml#/mettre_controle'}
+  /v1/compteurs/{identifiant_compteur}/remettre-disponible: {$ref: './paths/comptage.yaml#/remettre_disponible'}
   /v1/affectations-compteur: {$ref: './paths/comptage.yaml#/affectations'}
   /v1/affectations-compteur/{identifiant_affectation}: {$ref: './paths/comptage.yaml#/affectation'}
-  /v1/affectations-compteur/{identifiant_affectation}/cloturer: {$ref: './paths/comptage.yaml#/cloturer_affectation'}
   /v1/releves: {$ref: './paths/comptage.yaml#/releves'}
   /v1/releves/importer: {$ref: './paths/comptage.yaml#/importer_releves'}
   /v1/releves/{identifiant_releve}: {$ref: './paths/comptage.yaml#/releve'}
@@ -93,11 +104,42 @@ components:
     ModifierTiers: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierTiers'}
     CreerContratAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/CreerContratAbonnement'}
     CreerParticipationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/CreerParticipationContrat'}
+    PreferencesFacturationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/PreferencesFacturationContrat'}
+    PreferencesReglementContrat: {$ref: './schemas/noyau.yaml#/components/schemas/PreferencesReglementContrat'}
     ModifierContratAbonnement: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierContratAbonnement'}
+    ModifierParticipationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierParticipationContrat'}
+    ValiderContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ValiderContrat'}
+    ActiverContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ActiverContrat'}
+    SuspendreContrat: {$ref: './schemas/noyau.yaml#/components/schemas/SuspendreContrat'}
+    ReactiverContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ReactiverContrat'}
+    AnnulerContrat: {$ref: './schemas/noyau.yaml#/components/schemas/AnnulerContrat'}
+    ResilierContrat: {$ref: './schemas/noyau.yaml#/components/schemas/ResilierContrat'}
+    MuterContrat: {$ref: './schemas/noyau.yaml#/components/schemas/MuterContrat'}
+    CloturerParticipationContrat: {$ref: './schemas/noyau.yaml#/components/schemas/CloturerParticipationContrat'}
     CreerPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/CreerPointConsommation'}
     ModifierPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierPointConsommation'}
+    CreerPointDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/CreerPointDesserte'}
+    ModifierLocalisationPointDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierLocalisationPointDesserte'}
+    SynchroniserPointDesserteSig: {$ref: './schemas/noyau.yaml#/components/schemas/SynchroniserPointDesserteSig'}
+    ChangerDisponibilitePointDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/ChangerDisponibilitePointDesserte'}
+    RetirerPointDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/RetirerPointDesserte'}
+    OuvrirPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/OuvrirPointConsommation'}
+    FermerPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/FermerPointConsommation'}
+    ReouvrirPointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/ReouvrirPointConsommation'}
+    CreerRattachementDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/CreerRattachementDesserte'}
+    CloturerRattachementDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/CloturerRattachementDesserte'}
+    ChangerRattachementDesserte: {$ref: './schemas/noyau.yaml#/components/schemas/ChangerRattachementDesserte'}
+    AffecterTourneeReleve: {$ref: './schemas/noyau.yaml#/components/schemas/AffecterTourneeReleve'}
+    CorrigerAdressePointConsommation: {$ref: './schemas/noyau.yaml#/components/schemas/CorrigerAdressePointConsommation'}
     CreerCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/CreerCompteur'}
     ModifierCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/ModifierCompteur'}
+    PoserCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/PoserCompteur'}
+    DeposerCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/DeposerCompteur'}
+    RemplacerCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/RemplacerCompteur'}
+    ReformerCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/ReformerCompteur'}
+    MettreCompteurControle: {$ref: './schemas/noyau.yaml#/components/schemas/MettreCompteurControle'}
+    RemettreCompteurDisponible: {$ref: './schemas/noyau.yaml#/components/schemas/RemettreCompteurDisponible'}
+    CorrigerAffectationCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/CorrigerAffectationCompteur'}
     CreerAffectationCompteur: {$ref: './schemas/noyau.yaml#/components/schemas/CreerAffectationCompteur'}
     CreerReleve: {$ref: './schemas/noyau.yaml#/components/schemas/CreerReleve'}
     CorrigerReleve: {$ref: './schemas/noyau.yaml#/components/schemas/CorrigerReleve'}

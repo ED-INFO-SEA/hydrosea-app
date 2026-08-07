@@ -25,8 +25,12 @@ paths:
   /v1/tiers:
     get:
       operationId: rechercher_tiers
+      x-hydrosea-disponibilite:
+        statut: disponible
+        implementation: hydrosea-app
+        version_minimale: mission-006
       summary: Rechercher des Tiers
-      description: Recherche multicritère et détection indicative de doublons ; la décision de fusion reste métier.
+      description: Recherche multicritère paginée et minimisée. Cette opération ne qualifie pas les doublons ; BS-TIE-007 reste intégré à la création et aux décisions métier.
       tags:
         - Tiers
       security:
@@ -83,17 +87,21 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-003
       x-hydrosea-rm:
-        - RM-TIE
+        - RM-TIE-010
       x-hydrosea-evt:
-        - EVT-TIE-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - ref.tiers
         - ref.tiers_personne_physique
         - ref.tiers_personne_morale
     post:
       operationId: creer_tiers
+      x-hydrosea-disponibilite:
+        statut: disponible
+        implementation: hydrosea-app
+        version_minimale: mission-006
       summary: Créer un Tiers
       description: Crée atomiquement un Tiers personne physique ou morale et contrôle les doublons probables.
       tags:
@@ -133,10 +141,13 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-001
       x-hydrosea-rm:
         - RM-TIE-001
         - RM-TIE-002
+        - RM-TIE-003
+        - RM-TIE-007
+        - RM-TIE-010
       x-hydrosea-evt:
         - EVT-TIE-001
       x-hydrosea-tables:
@@ -148,6 +159,10 @@ paths:
       - $ref: '#/components/parameters/IdentifiantTiers'
     get:
       operationId: consulter_tiers
+      x-hydrosea-disponibilite:
+        statut: disponible
+        implementation: hydrosea-app
+        version_minimale: mission-006
       summary: Consulter un Tiers
       description: Retourne la représentation autorisée du Tiers sans données internes inutiles.
       tags:
@@ -177,17 +192,24 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-002
       x-hydrosea-rm:
-        - RM-TIE
+        - RM-TIE-010
       x-hydrosea-evt:
-        - EVT-TIE-002
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - ref.tiers
+        - ref.tiers_personne_physique
+        - ref.tiers_personne_morale
+        - ref.coordonnees
     patch:
       operationId: modifier_tiers
+      x-hydrosea-disponibilite:
+        statut: disponible
+        implementation: hydrosea-app
+        version_minimale: mission-006
       summary: Modifier un Tiers
-      description: Modifie les attributs autorisés selon la version attendue ; schéma PATCH spécifique à finaliser avec l’application.
+      description: Modifie une spécialisation complète selon la version attendue. Le contrat interdit catégorie, référence, statut et données techniques ; la compatibilité avec la catégorie existante est contrôlée par RM-TIE-003 et ne peut être exprimée par OpenAPI seul.
       tags:
         - Tiers
       security:
@@ -224,9 +246,15 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-004
       x-hydrosea-rm:
-        - RM-TIE
+        - RM-TIE-001
+        - RM-TIE-003
+        - RM-TIE-004
+        - RM-TIE-007
+        - RM-TIE-008
+        - RM-TIE-009
+        - RM-TIE-010
       x-hydrosea-evt:
         - EVT-TIE-002
       x-hydrosea-tables:
@@ -238,8 +266,13 @@ paths:
       - $ref: '#/components/parameters/IdentifiantTiers'
     post:
       operationId: fusionner_tiers
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Fusionner deux Tiers
-      description: Conserve le Tiers cible et archive le doublon selon RM-TIE ; la sélection automatique du survivant n’est pas définie.
+      description: Contrat prospectif non implémenté. Fusionne sous contrôle humain et conserve le Tiers absorbé ; sélection du survivant et transferts restent arbitrés dans BS-TIE-008.
       tags:
         - Tiers
       security:
@@ -286,20 +319,32 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-008
       x-hydrosea-rm:
-        - RM-TIE-004
+        - RM-TIE-001
+        - RM-TIE-009
+        - RM-TIE-010
+        - RM-TIE-012
+        - RM-TIE-013
       x-hydrosea-evt:
         - EVT-TIE-003
       x-hydrosea-tables:
         - ref.tiers
+        - abo.participation_contrat
+        - fac.facture
+        - pai.paiement
+        - ref.coordonnees
   /v1/tiers/{identifiant_tiers}/archiver:
     parameters:
       - $ref: '#/components/parameters/IdentifiantTiers'
     post:
       operationId: archiver_tiers
+      x-hydrosea-disponibilite:
+        statut: disponible
+        implementation: hydrosea-app
+        version_minimale: mission-006
       summary: Archiver un Tiers
-      description: Archive le Tiers lorsque les dépendances métier l’autorisent.
+      description: Archive logiquement le Tiers lorsque les dépendances métier l’autorisent ; la politique définitive sur contrats et dettes reste explicitement arbitrée dans BS-TIE-005.
       tags:
         - Tiers
       security:
@@ -342,9 +387,12 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-005
       x-hydrosea-rm:
-        - RM-TIE
+        - RM-TIE-005
+        - RM-TIE-006
+        - RM-TIE-009
+        - RM-TIE-010
       x-hydrosea-evt:
         - EVT-TIE-004
       x-hydrosea-tables:
@@ -354,8 +402,13 @@ paths:
       - $ref: '#/components/parameters/IdentifiantTiers'
     post:
       operationId: reactiver_tiers
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Réactiver un Tiers
-      description: Réactive un Tiers archivé lorsque la règle métier l’autorise.
+      description: Contrat prospectif non implémenté. Réactive un Tiers archivé en conservant identifiant et référence après contrôle des doublons et dépendances.
       tags:
         - Tiers
       security:
@@ -387,9 +440,13 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - A_ARBITRER_BS_TIERS
+        - BS-TIE-006
       x-hydrosea-rm:
-        - RM-TIE
+        - RM-TIE-001
+        - RM-TIE-007
+        - RM-TIE-009
+        - RM-TIE-010
+        - RM-TIE-011
       x-hydrosea-evt:
         - EVT-TIE-005
       x-hydrosea-tables:
@@ -397,6 +454,11 @@ paths:
   /v1/contrats-abonnement:
     get:
       operationId: rechercher_contrats_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des contrats d’abonnement
       description: Recherche paginée par référence, statut, Tiers ou Point de consommation.
       tags:
@@ -452,16 +514,23 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-001
+        - BS-CTR-007
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-014
+        - RM-CTR-015
       x-hydrosea-evt:
-        - EVT-CTR-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - abo.contrat_abonnement
         - abo.participation_contrat
+        - abo.liaison_contrat_consommation
     post:
       operationId: creer_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Créer un contrat d’abonnement
       description: Crée un brouillon relié à un Point de consommation et à ses participants initiaux.
       tags:
@@ -502,6 +571,12 @@ paths:
         - BS-CTR-001
       x-hydrosea-rm:
         - RM-CTR-001
+        - RM-CTR-003
+        - RM-CTR-004
+        - RM-CTR-010
+        - RM-CTR-011
+        - RM-CTR-014
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-001
       x-hydrosea-tables:
@@ -513,6 +588,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     get:
       operationId: consulter_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter un contrat d’abonnement
       description: Retourne le contrat, son Point de consommation et ses participants autorisés.
       tags:
@@ -540,16 +620,24 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-001
+        - BS-CTR-006
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-011
+        - RM-CTR-014
+        - RM-CTR-015
       x-hydrosea-evt:
-        - EVT-CTR-002
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - abo.contrat_abonnement
         - abo.participation_contrat
+        - abo.liaison_contrat_consommation
     patch:
       operationId: modifier_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Modifier un contrat d’abonnement
       description: Modifie les données autorisées avant ou pendant le cycle du contrat, sans commander une transition.
       tags:
@@ -590,7 +678,9 @@ paths:
       x-hydrosea-bs:
         - BS-CTR-002
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-010
+        - RM-CTR-013
+        - RM-CTR-014
       x-hydrosea-evt:
         - EVT-CTR-010
       x-hydrosea-tables:
@@ -600,6 +690,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: valider_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Valider un contrat d’abonnement
       description: Vérifie les préconditions métier avant activation ; les contrôles restent définis par RM-CTR.
       tags:
@@ -611,6 +706,12 @@ paths:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValiderContrat'
       responses:
         '200':
           description: Contrat validé
@@ -633,9 +734,16 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-002
+        - BS-CTR-008
       x-hydrosea-rm:
         - RM-CTR-001
+        - RM-CTR-003
+        - RM-CTR-004
+        - RM-CTR-005
+        - RM-CTR-010
+        - RM-CTR-011
+        - RM-CTR-014
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-002
       x-hydrosea-tables:
@@ -646,6 +754,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: activer_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Activer un contrat d’abonnement
       description: Active un contrat validé à sa date d’effet avec un titulaire principal.
       tags:
@@ -657,6 +770,12 @@ paths:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActiverContrat'
       responses:
         '200':
           description: Contrat actif
@@ -679,9 +798,14 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-002
+        - BS-CTR-009
       x-hydrosea-rm:
         - RM-CTR-001
+        - RM-CTR-003
+        - RM-CTR-004
+        - RM-CTR-005
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-003
       x-hydrosea-tables:
@@ -692,6 +816,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: suspendre_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Suspendre un contrat d’abonnement
       description: Suspend le contrat selon le motif et la date d’effet fournis.
       tags:
@@ -708,15 +837,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - motif
-              properties:
-                motif:
-                  type: string
-                date_effet:
-                  type: string
-                  format: date-time
+              $ref: '#/components/schemas/SuspendreContrat'
       responses:
         '200':
           description: Contrat suspendu
@@ -741,7 +862,9 @@ paths:
       x-hydrosea-bs:
         - BS-CTR-005
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-005
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-004
       x-hydrosea-tables:
@@ -751,6 +874,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: reactiver_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Réactiver un contrat d’abonnement
       description: Réactive un contrat suspendu lorsque la transition est autorisée.
       tags:
@@ -762,6 +890,12 @@ paths:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReactiverContrat'
       responses:
         '200':
           description: Contrat réactivé
@@ -784,18 +918,88 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-005
+        - BS-CTR-010
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-001
+        - RM-CTR-005
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-005
       x-hydrosea-tables:
         - abo.contrat_abonnement
+  /v1/contrats-abonnement/{identifiant_contrat}/annuler:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantContrat'
+    post:
+      operationId: annuler_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Annuler un contrat d’abonnement
+      description: Annule un contrat qui n’est jamais entré en vigueur ; cette commande de cycle justifie une opération autonome pour porter décision, motif, concurrence et idempotence.
+      tags:
+        - Contrats
+      security:
+        - oauth2:
+            - contrats:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnnulerContrat'
+      responses:
+        '200':
+          description: Contrat annulé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContratAbonnement'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CTR-011
+      x-hydrosea-rm:
+        - RM-CTR-005
+        - RM-CTR-010
+        - RM-CTR-012
+        - RM-CTR-013
+        - RM-CTR-015
+      x-hydrosea-evt:
+        - EVT-CTR-011
+      x-hydrosea-tables:
+        - abo.contrat_abonnement
+        - abo.participation_contrat
+        - abo.liaison_contrat_consommation
   /v1/contrats-abonnement/{identifiant_contrat}/resilier:
     parameters:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: resilier_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Résilier un contrat d’abonnement
       description: Enregistre la date et le motif de résiliation sans supprimer l’historique.
       tags:
@@ -812,16 +1016,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - date_resiliation
-                - motif
-              properties:
-                date_resiliation:
-                  type: string
-                  format: date-time
-                motif:
-                  type: string
+              $ref: '#/components/schemas/ResilierContrat'
       responses:
         '200':
           description: Contrat résilié
@@ -846,7 +1041,13 @@ paths:
       x-hydrosea-bs:
         - BS-CTR-003
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-005
+        - RM-CTR-007
+        - RM-CTR-008
+        - RM-CTR-009
+        - RM-CTR-012
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-007
       x-hydrosea-tables:
@@ -857,6 +1058,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: muter_contrat_abonnement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Muter un contrat d’abonnement
       description: Clôture le contrat sortant et prépare le contrat entrant ; les règles de reprise sont définies par BS-CTR-004.
       tags:
@@ -873,20 +1079,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - identifiant_tiers_entrant
-                - date_mutation
-              properties:
-                identifiant_tiers_entrant:
-                  type: string
-                  format: uuid
-                date_mutation:
-                  type: string
-                  format: date-time
-                index_sortie:
-                  type: number
-                  minimum: 0
+              $ref: '#/components/schemas/MuterContrat'
             examples:
               mutation:
                 $ref: '#/components/examples/mutation'
@@ -914,8 +1107,15 @@ paths:
       x-hydrosea-bs:
         - BS-CTR-004
       x-hydrosea-rm:
-        - RM-CTR
+        - RM-CTR-004
+        - RM-CTR-006
+        - RM-CTR-007
+        - RM-CTR-008
+        - RM-CTR-009
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
+        - EVT-CTR-013
         - EVT-CTR-006
       x-hydrosea-tables:
         - abo.contrat_abonnement
@@ -926,6 +1126,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantContrat'
     post:
       operationId: ajouter_participant_contrat
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Ajouter un participant au contrat
       description: Ajoute un rôle contractuel historisé.
       tags:
@@ -965,9 +1170,14 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-002
+        - BS-CTR-012
       x-hydrosea-rm:
         - RM-CTR-001
+        - RM-CTR-002
+        - RM-CTR-011
+        - RM-CTR-013
+        - RM-CTR-014
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-008
       x-hydrosea-tables:
@@ -978,6 +1188,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantParticipation'
     patch:
       operationId: modifier_participant_contrat
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Modifier un participant au contrat
       description: Modifie les attributs autorisés d’une participation selon sa version.
       tags:
@@ -993,15 +1208,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: false
-              properties:
-                principal:
-                  type: boolean
-                responsabilite_financiere:
-                  type: boolean
-                ordre_affichage:
-                  type: integer
+              $ref: '#/components/schemas/ModifierParticipationContrat'
       responses:
         '200':
           description: Participation modifiée
@@ -1024,11 +1231,14 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-002
+        - BS-CTR-013
       x-hydrosea-rm:
-        - RM-CTR-001
+        - RM-CTR-010
+        - RM-CTR-011
+        - RM-CTR-013
+        - RM-CTR-014
       x-hydrosea-evt:
-        - EVT-CTR-008
+        - EVT-CTR-010
       x-hydrosea-tables:
         - abo.participation_contrat
   /v1/contrats-abonnement/{identifiant_contrat}/participants/{identifiant_participation}/cloturer:
@@ -1037,6 +1247,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantParticipation'
     post:
       operationId: cloturer_participant_contrat
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Clôturer une participation au contrat
       description: Clôture le rôle sans supprimer sa période historique.
       tags:
@@ -1053,16 +1268,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - date_fin_validite
-                - motif_fin
-              properties:
-                date_fin_validite:
-                  type: string
-                  format: date-time
-                motif_fin:
-                  type: string
+              $ref: '#/components/schemas/CloturerParticipationContrat'
       responses:
         '200':
           description: Participation clôturée
@@ -1085,9 +1291,12 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CTR-002
+        - BS-CTR-014
       x-hydrosea-rm:
         - RM-CTR-001
+        - RM-CTR-011
+        - RM-CTR-013
+        - RM-CTR-015
       x-hydrosea-evt:
         - EVT-CTR-009
       x-hydrosea-tables:
@@ -1095,39 +1304,75 @@ paths:
   /v1/points-desserte:
     get:
       operationId: rechercher_points_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des Points de desserte
-      description: Recherche le patrimoine synchronisé ; le SIG reste maître.
+      description: Recherche les identités administratives des Points de desserte selon les critères autorisés. Cette lecture prospective restitue les corrélations SIG et localisations projetées disponibles sans interroger ni modifier directement le patrimoine SIG, les Points de consommation ou les compteurs.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:lecture
-      parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-        - name: taille_page
-          in: query
-          schema:
-            type: integer
-            maximum: 100
-        - name: reference
-          in: query
-          schema:
-            type: string
-        - name: statut
-          in: query
-          schema:
-            type: string
+            - points:lecture
       responses:
         '200':
-          description: Page de Points de desserte
+          description: Succès
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PagePointsDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PD-003
+      x-hydrosea-rm:
+        - RM-PD-001
+      x-hydrosea-evt:
+        - AUCUN_EVENEMENT_PRODUIT
+      x-hydrosea-tables:
+        - des.point_desserte
+    post:
+      operationId: creer_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Créer un Point de desserte
+      description: Crée l’identité administrative HydroSEA d’un Point de desserte à partir d’une commune, d’une adresse et, éventuellement, d’une localisation opérationnelle sourcée. Cette écriture prospective ne crée ni corrélation SIG, ni géométrie patrimoniale dans le SIG, ni Point de consommation, ni compteur.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerPointDesserte'
+      responses:
+        '201':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
         '400':
           $ref: '#/components/responses/RequeteInvalide'
         '401':
@@ -1139,28 +1384,37 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PD-001
       x-hydrosea-rm:
-        - RM-PD
+        - RM-PD-001
+        - RM-PD-002
+        - RM-PD-003
+        - RM-PD-004
+        - RM-PD-008
       x-hydrosea-evt:
         - EVT-PD-001
       x-hydrosea-tables:
         - des.point_desserte
   /v1/points-desserte/{identifiant_point_desserte}:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantPointDesserte'
     get:
       operationId: consulter_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter un Point de desserte
-      description: Retourne les attributs synchronisés sans opération patrimoniale d’écriture.
+      description: Restitue l’identité, le cycle de vie administratif, l’adresse historisée, la localisation opérationnelle et l’éventuelle corrélation SIG d’un Point de desserte. Cette lecture prospective ne garantit pas à elle seule l’état du patrimoine réalisé dans le SIG et ne modifie aucune donnée.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:lecture
+            - points:lecture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
       responses:
         '200':
-          description: Point trouvé
+          description: Succès
           content:
             application/json:
               schema:
@@ -1178,79 +1432,313 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PD-002
       x-hydrosea-rm:
-        - RM-PD
+        - RM-PD-001
+        - RM-PD-003
+        - RM-PD-004
       x-hydrosea-evt:
-        - EVT-PD-006
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - des.point_desserte
-  /v1/points-desserte/synchroniser-sig:
+  /v1/points-desserte/{identifiant_point_desserte}/synchroniser-sig:
     post:
-      operationId: synchroniser_points_desserte_sig
-      summary: Synchroniser les Points de desserte depuis le SIG
-      description: Importe les changements du référentiel maître sans modifier le SIG.
+      operationId: synchroniser_point_desserte_sig
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Synchroniser un Point de desserte avec le SIG
+      description: Enregistre ou met à jour, après contrôle de l’identité HydroSEA, la corrélation avec l’identifiant du référentiel SIG et les projections autorisées. Cette écriture prospective ne rend pas HydroSEA maître du patrimoine réalisé ni des géométries patrimoniales, qui restent sous la responsabilité du SIG.
       tags:
         - Points
       security:
         - oauth2:
-            - administration
+            - points:synchronisation
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
         - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SynchroniserPointDesserteSig'
       responses:
-        '202':
-          description: Synchronisation acceptée
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
         '400':
           $ref: '#/components/responses/RequeteInvalide'
         '401':
           $ref: '#/components/responses/AuthentificationRequise'
         '403':
           $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
         '409':
           $ref: '#/components/responses/ConflitMetier'
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-004
+        - BS-PD-004
       x-hydrosea-rm:
-        - RM-PD
+        - RM-PD-002
+        - RM-PD-003
+        - RM-PD-007
+        - RM-PD-008
       x-hydrosea-evt:
-        - EVT-PD-006
+        - EVT-PD-002
       x-hydrosea-tables:
         - des.point_desserte
-  /v1/points-consommation:
-    get:
-      operationId: rechercher_points_consommation
-      summary: Rechercher des Points de consommation
-      description: Recherche paginée par référence, statut et usage.
+  /v1/points-desserte/{identifiant_point_desserte}/rendre-disponible:
+    post:
+      operationId: rendre_disponible_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Rendre un Point de desserte disponible
+      description: Fait passer un Point de desserte créé ou indisponible à l’état disponible après vérification de sa situation administrative et, lorsque requis, de sa corrélation avec le patrimoine réalisé. Cette écriture prospective n’ouvre aucun Point de consommation et n’active ni contrat ni compteur.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:lecture
+            - points:ecriture
       parameters:
-        - name: page
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-        - name: taille_page
-          in: query
-          schema:
-            type: integer
-            maximum: 100
-        - name: reference
-          in: query
-          schema:
-            type: string
-        - name: statut
-          in: query
-          schema:
-            type: string
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangerDisponibilitePointDesserte'
       responses:
         '200':
-          description: Page de Points
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PD-005
+      x-hydrosea-rm:
+        - RM-PD-004
+        - RM-PD-005
+      x-hydrosea-evt:
+        - EVT-PD-003
+      x-hydrosea-tables:
+        - des.point_desserte
+  /v1/points-desserte/{identifiant_point_desserte}/rendre-indisponible:
+    post:
+      operationId: rendre_indisponible_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Rendre un Point de desserte indisponible
+      description: Place un Point de desserte disponible dans un état temporairement indisponible avec une date d’effet et un motif contrôlés. Cette écriture prospective ne ferme pas les Points de consommation rattachés, ne résilie aucun contrat et ne modifie pas le patrimoine SIG.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangerDisponibilitePointDesserte'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PD-006
+      x-hydrosea-rm:
+        - RM-PD-005
+      x-hydrosea-evt:
+        - EVT-PD-004
+      x-hydrosea-tables:
+        - des.point_desserte
+  /v1/points-desserte/{identifiant_point_desserte}/retirer:
+    post:
+      operationId: retirer_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Retirer un Point de desserte
+      description: Prononce le retrait administratif définitif d’un Point de desserte lorsque aucun rattachement actif ne l’interdit et conserve son historique. Cette écriture prospective ne supprime pas le patrimoine SIG, ne ferme pas implicitement un Point de consommation et ne dépose aucun compteur.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetirerPointDesserte'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PD-007
+      x-hydrosea-rm:
+        - RM-PD-006
+      x-hydrosea-evt:
+        - EVT-PD-005
+      x-hydrosea-tables:
+        - des.point_desserte
+        - des.liaison_desserte_consommation
+  /v1/points-desserte/{identifiant_point_desserte}/corriger-localisation:
+    post:
+      operationId: corriger_localisation_point_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Corriger la localisation d’un Point de desserte
+      description: Historise une correction de l’adresse administrative ou de la localisation opérationnelle sourcée d’un Point de desserte. Cette écriture prospective ne remplace ni ne corrige la géométrie patrimoniale réalisée dont le SIG reste maître et ne change aucun rattachement de consommation.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointDesserte'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ModifierLocalisationPointDesserte'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointDesserte'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PD-008
+      x-hydrosea-rm:
+        - RM-PD-003
+        - RM-PD-004
+        - RM-PD-008
+      x-hydrosea-evt:
+        - EVT-PD-006
+      x-hydrosea-tables:
+        - des.point_desserte
+        - ref.adresse
+  /v1/points-consommation:
+    get:
+      operationId: rechercher_points_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Rechercher des Points de consommation
+      description: Recherche les unités administratives de consommation selon leur état, leur usage, leur adresse de situation ou leur rattachement historisé. Cette lecture prospective ne restitue pas de titulaire ou de compteur direct et ne modifie ni contrat, ni facturation, ni adresse de Tiers.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:lecture
+      responses:
+        '200':
+          description: Succès
           content:
             application/json:
               schema:
@@ -1261,27 +1749,36 @@ paths:
           $ref: '#/components/responses/AuthentificationRequise'
         '403':
           $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
         '409':
           $ref: '#/components/responses/ConflitMetier'
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PC-003
       x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-002
+        - RM-PC-008
+        - RM-PC-011
       x-hydrosea-evt:
-        - EVT-PC-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - des.point_consommation
     post:
       operationId: creer_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Créer un Point de consommation
-      description: Prépare administrativement le Point relié au patrimoine SIG.
+      description: Prépare une nouvelle unité administrative de consommation avec son usage, son adresse de situation et, si elle est connue, une première période de rattachement à une desserte. Cette écriture prospective ne crée ni contrat d’abonnement, ni titulaire, ni compteur et n’ouvre pas automatiquement le Point.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:ecriture
+            - points:ecriture
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/XCorrelationId'
@@ -1293,7 +1790,7 @@ paths:
               $ref: '#/components/schemas/CreerPointConsommation'
       responses:
         '201':
-          description: Point créé
+          description: Succès
           content:
             application/json:
               schema:
@@ -1309,29 +1806,38 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PC-001
       x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-001
+        - RM-PC-002
+        - RM-PC-003
+        - RM-PC-011
+        - RM-PC-012
       x-hydrosea-evt:
         - EVT-PC-001
       x-hydrosea-tables:
         - des.point_consommation
         - des.liaison_desserte_consommation
   /v1/points-consommation/{identifiant_point_consommation}:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantPointConsommation'
     get:
       operationId: consulter_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter un Point de consommation
-      description: Retourne le Point et ses références patrimoniales.
+      description: Restitue l’identité administrative, l’état, l’usage, l’adresse de situation et les rattachements historisés d’un Point de consommation. Cette lecture prospective ne présente ni titulaire ni compteur comme attribut direct et n’altère aucun contrat ou document de facturation.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:lecture
+            - points:lecture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
       responses:
         '200':
-          description: Point trouvé
+          description: Succès
           content:
             application/json:
               schema:
@@ -1349,25 +1855,35 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PC-002
       x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-001
+        - RM-PC-002
+        - RM-PC-008
+        - RM-PC-011
       x-hydrosea-evt:
-        - EVT-PC-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - des.point_consommation
     patch:
       operationId: modifier_point_consommation
-      summary: Modifier un Point de consommation
-      description: Modifie uniquement les attributs non patrimoniaux autorisés.
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Modifier les caractéristiques d’un Point de consommation
+      description: Met à jour les caractéristiques administratives autorisées d’un Point de consommation après contrôle de version et historise la date d’effet. Cette écriture prospective ne change pas son état, son rattachement, l’adresse d’un Tiers, l’adresse de facturation d’un Contrat ni l’affectation d’un compteur.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:ecriture
+            - points:ecriture
       parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
       requestBody:
         required: true
         content:
@@ -1376,7 +1892,7 @@ paths:
               $ref: '#/components/schemas/ModifierPointConsommation'
       responses:
         '200':
-          description: Point modifié
+          description: Succès
           content:
             application/json:
               schema:
@@ -1396,77 +1912,45 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-001
+        - BS-PC-004
       x-hydrosea-rm:
-        - RM-PC
-      x-hydrosea-evt:
-        - EVT-PC-005
-      x-hydrosea-tables:
-        - des.point_consommation
-  /v1/points-consommation/{identifiant_point_consommation}/ouvrir:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantPointConsommation'
-    post:
-      operationId: ouvrir_point_consommation
-      summary: Ouvrir un Point de consommation
-      description: Fait passer le Point préparé à l’état ouvert.
-      tags:
-        - Points
-      security:
-        - oauth2:
-            - comptage:ecriture
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-        - $ref: '#/components/parameters/IfMatch'
-        - $ref: '#/components/parameters/XCorrelationId'
-      responses:
-        '200':
-          description: Point ouvert
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PointConsommation'
-        '400':
-          $ref: '#/components/responses/RequeteInvalide'
-        '401':
-          $ref: '#/components/responses/AuthentificationRequise'
-        '403':
-          $ref: '#/components/responses/DroitInsuffisant'
-        '404':
-          $ref: '#/components/responses/RessourceAbsente'
-        '409':
-          $ref: '#/components/responses/ConflitMetier'
-        '412':
-          $ref: '#/components/responses/PreconditionVersion'
-        '500':
-          $ref: '#/components/responses/ErreurInterne'
-      x-hydrosea-bs:
-        - BS-TRV-004
-      x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-001
+        - RM-PC-002
+        - RM-PC-010
+        - RM-PC-011
       x-hydrosea-evt:
         - EVT-PC-002
       x-hydrosea-tables:
         - des.point_consommation
-  /v1/points-consommation/{identifiant_point_consommation}/fermer:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+  /v1/points-consommation/{identifiant_point_consommation}/ouvrir:
     post:
-      operationId: fermer_point_consommation
-      summary: Fermer un Point de consommation
-      description: Ferme le Point selon une décision métier explicite.
+      operationId: ouvrir_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Ouvrir un Point de consommation
+      description: Fait passer un Point de consommation préparé à l’état ouvert après contrôle de son rattachement à une desserte disponible et de sa situation administrative. Cette écriture prospective n’active pas automatiquement un Contrat d’abonnement et ne pose ni n’affecte aucun compteur.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:ecriture
+            - points:ecriture
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OuvrirPointConsommation'
       responses:
         '200':
-          description: Point fermé
+          description: Succès
           content:
             application/json:
               schema:
@@ -1486,32 +1970,45 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-004
+        - BS-PC-005
       x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-003
+        - RM-PC-005
+        - RM-PC-012
       x-hydrosea-evt:
-        - EVT-PC-007
+        - EVT-PC-003
       x-hydrosea-tables:
         - des.point_consommation
-  /v1/points-consommation/{identifiant_point_consommation}/reouvrir:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - des.liaison_desserte_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/fermer:
     post:
-      operationId: reouvrir_point_consommation
-      summary: Réouvrir un Point de consommation
-      description: Réouvre le Point lorsque la transition est autorisée ; le cycle définitif reste à arbitrer.
+      operationId: fermer_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Fermer un Point de consommation
+      description: Fait passer un Point de consommation ouvert à l’état fermé à la date d’effet motivée, sans supprimer le Point ni son historique. Cette écriture prospective ne résilie pas automatiquement les contrats, ne dépose ni ne désaffecte les compteurs et conserve toutes les périodes antérieures.
       tags:
         - Points
       security:
         - oauth2:
-            - comptage:ecriture
+            - points:ecriture
       parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FermerPointConsommation'
       responses:
         '200':
-          description: Point réouvert
+          description: Succès
           content:
             application/json:
               schema:
@@ -1531,16 +2028,368 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-TRV-004
+        - BS-PC-006
       x-hydrosea-rm:
-        - RM-PC
+        - RM-PC-005
+        - RM-PC-006
+        - RM-PC-007
+        - RM-PC-010
       x-hydrosea-evt:
         - EVT-PC-004
       x-hydrosea-tables:
         - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/reouvrir:
+    post:
+      operationId: reouvrir_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Réouvrir un Point de consommation
+      description: Fait repasser un Point de consommation fermé à l’état ouvert après contrôle du motif, de la date d’effet et d’un rattachement valide à une desserte disponible. Cette écriture prospective ne réactive aucun contrat résilié et ne réaffecte aucun compteur.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReouvrirPointConsommation'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-007
+      x-hydrosea-rm:
+        - RM-PC-003
+        - RM-PC-005
+        - RM-PC-007
+        - RM-PC-010
+      x-hydrosea-evt:
+        - EVT-PC-005
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/rattachements-desserte:
+    post:
+      operationId: rattacher_point_consommation_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Rattacher un Point de consommation à une desserte
+      description: Ouvre une période de rattachement entre un Point de consommation et un Point de desserte disponible, après contrôle de l’absence de chevauchement temporel. Cette écriture prospective ne déplace pas de compteur, ne modifie pas de contrat et ne crée aucune géométrie SIG.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreerRattachementDesserte'
+      responses:
+        '201':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-008
+      x-hydrosea-rm:
+        - RM-PC-003
+        - RM-PC-004
+        - RM-PC-010
+        - RM-PD-005
+      x-hydrosea-evt:
+        - EVT-PC-006
+      x-hydrosea-tables:
+        - des.liaison_desserte_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/rattachements-desserte/cloturer:
+    post:
+      operationId: cloturer_rattachement_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Clôturer un rattachement à une desserte
+      description: Ferme à la date d’effet la période active reliant un Point de consommation à son Point de desserte, tout en conservant l’historique. Cette écriture prospective ne ferme pas le Point de consommation, ne résilie aucun contrat et ne modifie aucun compteur.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloturerRattachementDesserte'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-009
+      x-hydrosea-rm:
+        - RM-PC-003
+        - RM-PC-004
+        - RM-PC-010
+      x-hydrosea-evt:
+        - EVT-PC-007
+      x-hydrosea-tables:
+        - des.liaison_desserte_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/changer-rattachement-desserte:
+    post:
+      operationId: changer_rattachement_desserte
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Changer le rattachement à une desserte
+      description: Clôture le rattachement actif puis ouvre, à la même date d’effet, une période vers une nouvelle desserte disponible sans chevauchement. Cette écriture prospective ne transfère pas automatiquement les contrats ou compteurs et ne modifie pas les géométries SIG.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangerRattachementDesserte'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-010
+      x-hydrosea-rm:
+        - RM-PC-003
+        - RM-PC-004
+        - RM-PC-010
+        - RM-PD-005
+      x-hydrosea-evt:
+        - EVT-PC-008
+      x-hydrosea-tables:
+        - des.liaison_desserte_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/affecter-tournee:
+    post:
+      operationId: affecter_tournee_releve_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Affecter un Point de consommation à une tournée de relève
+      description: Enregistre l’identifiant de tournée et le rang opérationnel du Point de consommation après contrôle du référentiel de tournées. Cette écriture prospective n’affecte aucun compteur, ne crée aucune relève et ne modifie ni desserte ni contrat.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AffecterTourneeReleve'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-011
+      x-hydrosea-rm:
+        - RM-PC-010
+        - RM-PC-011
+      x-hydrosea-evt:
+        - EVT-PC-009
+      x-hydrosea-tables:
+        - des.point_consommation
+  /v1/points-consommation/{identifiant_point_consommation}/corriger-adresse:
+    post:
+      operationId: corriger_adresse_point_consommation
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Corriger l’adresse de situation d’un Point de consommation
+      description: Historise la correction de l’adresse de situation administrative du Point de consommation à partir d’une référence interne vers ref.adresse et, à titre de projection, d’un identifiant BAN distinct. Cette écriture prospective ne modifie aucune adresse postale ou de correspondance d’un Tiers, ni aucune adresse de facturation ou d’envoi d’un Contrat ou document.
+      tags:
+        - Points
+      security:
+        - oauth2:
+            - points:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdentifiantPointConsommation'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrigerAdressePointConsommation'
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PointConsommation'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-PC-012
+      x-hydrosea-rm:
+        - RM-PC-010
+        - RM-PC-011
+      x-hydrosea-evt:
+        - EVT-PC-010
+      x-hydrosea-tables:
+        - des.point_consommation
+        - ref.adresse
   /v1/compteurs:
     get:
       operationId: rechercher_compteurs
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des compteurs
       description: Recherche paginée par numéro de série et statut.
       tags:
@@ -1585,15 +2434,20 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-003
       x-hydrosea-rm:
-        - RM-CPT
+        - RM-CPT-002
       x-hydrosea-evt:
-        - EVT-CPT-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - cpt.compteur
     post:
       operationId: enregistrer_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Enregistrer un compteur
       description: Enregistre un compteur dans le parc sans l’affecter à un Point.
       tags:
@@ -1630,7 +2484,8 @@ paths:
       x-hydrosea-bs:
         - BS-CPT-001
       x-hydrosea-rm:
-        - RM-CPT
+        - RM-CPT-001
+        - RM-CPT-002
       x-hydrosea-evt:
         - EVT-CPT-001
       x-hydrosea-tables:
@@ -1640,6 +2495,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantCompteur'
     get:
       operationId: consulter_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter un compteur
       description: Retourne le compteur et son état courant.
       tags:
@@ -1667,15 +2527,20 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-002
       x-hydrosea-rm:
-        - RM-CPT
+        - RM-CPT-001
       x-hydrosea-evt:
-        - EVT-CPT-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - cpt.compteur
     patch:
       operationId: modifier_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Modifier un compteur
       description: Corrige les caractéristiques autorisées sans modifier une affectation.
       tags:
@@ -1714,11 +2579,13 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-004
       x-hydrosea-rm:
-        - RM-CPT
+        - RM-CPT-001
+        - RM-CPT-002
+        - RM-CPT-016
       x-hydrosea-evt:
-        - EVT-CPT-008
+        - EVT-CPT-002
       x-hydrosea-tables:
         - cpt.compteur
   /v1/compteurs/{identifiant_compteur}/poser:
@@ -1726,8 +2593,13 @@ paths:
       - $ref: '#/components/parameters/IdentifiantCompteur'
     post:
       operationId: poser_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Poser un compteur
-      description: Crée ou active l’affectation au Point de consommation.
+      description: Pose atomiquement un Compteur disponible sur un Point de consommation, crée la période d’Affectation et conserve l’index de pose. Cette opération prospective ne crée ni n’active aucun Contrat et ne modifie aucune géométrie SIG.
       tags:
         - Comptage
       security:
@@ -1742,7 +2614,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreerAffectationCompteur'
+              $ref: '#/components/schemas/PoserCompteur'
       responses:
         '201':
           description: Affectation créée
@@ -1765,13 +2637,16 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-005
       x-hydrosea-rm:
-        - RM-AFF
-        - RM-CPT
+        - RM-CPT-003
+        - RM-CPT-004
+        - RM-CPT-005
+        - RM-CPT-008
+        - RM-CPT-010
       x-hydrosea-evt:
         - EVT-CPT-003
-        - EVT-AFF-002
+        - EVT-CPT-009
       x-hydrosea-tables:
         - cpt.compteur
         - cpt.affectation_compteur
@@ -1780,8 +2655,13 @@ paths:
       - $ref: '#/components/parameters/IdentifiantCompteur'
     post:
       operationId: deposer_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Déposer un compteur
-      description: Clôture l’affectation active avec l’index de dépose.
+      description: Clôt atomiquement l’Affectation active avec l’index de dépose ou une justification qualifiée et place le Compteur dans son état de devenir. Cette opération prospective ne ferme pas le Point, ne résilie aucun Contrat et ne supprime aucune Relève.
       tags:
         - Comptage
       security:
@@ -1796,19 +2676,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - date_depose
-                - index_depose
-              properties:
-                date_depose:
-                  type: string
-                  format: date-time
-                index_depose:
-                  type: number
-                  minimum: 0
-                motif:
-                  type: string
+              $ref: '#/components/schemas/DeposerCompteur'
       responses:
         '200':
           description: Affectation clôturée
@@ -1831,12 +2699,15 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-002
+        - BS-CPT-006
       x-hydrosea-rm:
-        - RM-AFF
+        - RM-CPT-007
+        - RM-CPT-009
+        - RM-CPT-011
+        - RM-CPT-012
       x-hydrosea-evt:
         - EVT-CPT-004
-        - EVT-AFF-003
+        - EVT-CPT-010
       x-hydrosea-tables:
         - cpt.compteur
         - cpt.affectation_compteur
@@ -1845,8 +2716,13 @@ paths:
       - $ref: '#/components/parameters/IdentifiantCompteur'
     post:
       operationId: remplacer_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Remplacer un compteur
-      description: Lie la dépose et la pose ; l’ordre temporel définitif reste documenté dans les arbitrages de données.
+      description: Remplace atomiquement le Compteur sortant par un Compteur entrant disponible au même instant T, clôt l’ancienne Affectation et crée la nouvelle avec leurs index. Cette opération prospective ne modifie ni Contrat, ni titulaire, ni dette, ni Point de desserte.
       tags:
         - Comptage
       security:
@@ -1861,25 +2737,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - identifiant_nouveau_compteur
-                - date_remplacement
-                - index_depose
-                - index_pose
-              properties:
-                identifiant_nouveau_compteur:
-                  type: string
-                  format: uuid
-                date_remplacement:
-                  type: string
-                  format: date-time
-                index_depose:
-                  type: number
-                  minimum: 0
-                index_pose:
-                  type: number
-                  minimum: 0
+              $ref: '#/components/schemas/RemplacerCompteur'
             examples:
               remplacement:
                 $ref: '#/components/examples/remplacement'
@@ -1905,14 +2763,15 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-003
+        - BS-CPT-007
       x-hydrosea-rm:
-        - RM-AFF
-        - RM-CPT
+        - RM-CPT-005
+        - RM-CPT-009
+        - RM-CPT-010
+        - RM-CPT-011
+        - RM-CPT-013
       x-hydrosea-evt:
         - EVT-CPT-005
-        - EVT-AFF-003
-        - EVT-AFF-002
       x-hydrosea-tables:
         - cpt.compteur
         - cpt.affectation_compteur
@@ -1921,17 +2780,28 @@ paths:
       - $ref: '#/components/parameters/IdentifiantCompteur'
     post:
       operationId: reformer_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Réformer un compteur
-      description: Retire définitivement le compteur du parc utilisable selon RM-CPT.
+      description: Réforme définitivement un Compteur déposé et sans Affectation active, tout en conservant son identité, ses Affectations et ses Relèves historiques. Cette opération prospective ne supprime aucune donnée.
       tags:
         - Comptage
       security:
         - oauth2:
-            - comptage:ecriture
+            - comptage:administration
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReformerCompteur'
       responses:
         '200':
           description: Compteur réformé
@@ -1954,16 +2824,137 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-002
+        - BS-CPT-008
       x-hydrosea-rm:
-        - RM-CPT
+        - RM-CPT-003
+        - RM-CPT-015
+        - RM-CPT-016
+      x-hydrosea-evt:
+        - EVT-CPT-006
+      x-hydrosea-tables:
+        - cpt.compteur
+  /v1/compteurs/{identifiant_compteur}/mettre-en-controle:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: mettre_compteur_controle
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Mettre un Compteur en contrôle
+      description: Place un Compteur disponible ou déposé en contrôle métrologique après vérification de l’absence d’Affectation active. Cette opération prospective ne crée aucune Affectation et ne modifie ni Point ni Contrat.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MettreCompteurControle'
+      responses:
+        '200':
+          description: Compteur en contrôle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-009
+      x-hydrosea-rm:
+        - RM-CPT-003
+        - RM-CPT-016
       x-hydrosea-evt:
         - EVT-CPT-007
+      x-hydrosea-tables:
+        - cpt.compteur
+  /v1/compteurs/{identifiant_compteur}/remettre-disponible:
+    parameters:
+      - $ref: '#/components/parameters/IdentifiantCompteur'
+    post:
+      operationId: remettre_compteur_disponible
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Remettre un Compteur disponible
+      description: Clôt un contrôle favorable et rend disponible un Compteur sans Affectation active, en conservant le résultat et sa référence. Cette opération prospective ne pose pas le Compteur.
+      tags:
+        - Comptage
+      security:
+        - oauth2:
+            - comptage:ecriture
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/IfMatch'
+        - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemettreCompteurDisponible'
+      responses:
+        '200':
+          description: Compteur disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Compteur'
+        '400':
+          $ref: '#/components/responses/RequeteInvalide'
+        '401':
+          $ref: '#/components/responses/AuthentificationRequise'
+        '403':
+          $ref: '#/components/responses/DroitInsuffisant'
+        '404':
+          $ref: '#/components/responses/RessourceAbsente'
+        '409':
+          $ref: '#/components/responses/ConflitMetier'
+        '412':
+          $ref: '#/components/responses/PreconditionVersion'
+        '500':
+          $ref: '#/components/responses/ErreurInterne'
+      x-hydrosea-bs:
+        - BS-CPT-010
+      x-hydrosea-rm:
+        - RM-CPT-003
+        - RM-CPT-016
+      x-hydrosea-evt:
+        - EVT-CPT-008
       x-hydrosea-tables:
         - cpt.compteur
   /v1/affectations-compteur:
     get:
       operationId: rechercher_affectations_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des affectations de compteur
       description: Recherche les périodes d’affectation par compteur ou Point.
       tags:
@@ -2010,54 +3001,13 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-011
       x-hydrosea-rm:
-        - RM-AFF
+        - RM-CPT-004
+        - RM-CPT-005
+        - RM-CPT-007
       x-hydrosea-evt:
-        - EVT-AFF-001
-      x-hydrosea-tables:
-        - cpt.affectation_compteur
-    post:
-      operationId: creer_affectation_compteur
-      summary: Créer une affectation de compteur
-      description: Prépare une affectation sans contourner le Service métier de pose.
-      tags:
-        - Comptage
-      security:
-        - oauth2:
-            - comptage:ecriture
-      parameters:
-        - $ref: '#/components/parameters/IdempotencyKey'
-        - $ref: '#/components/parameters/XCorrelationId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreerAffectationCompteur'
-      responses:
-        '201':
-          description: Affectation préparée
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AffectationCompteur'
-        '400':
-          $ref: '#/components/responses/RequeteInvalide'
-        '401':
-          $ref: '#/components/responses/AuthentificationRequise'
-        '403':
-          $ref: '#/components/responses/DroitInsuffisant'
-        '409':
-          $ref: '#/components/responses/ConflitMetier'
-        '500':
-          $ref: '#/components/responses/ErreurInterne'
-      x-hydrosea-bs:
-        - BS-CPT-001
-      x-hydrosea-rm:
-        - RM-AFF
-      x-hydrosea-evt:
-        - EVT-AFF-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - cpt.affectation_compteur
   /v1/affectations-compteur/{identifiant_affectation}:
@@ -2065,6 +3015,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantAffectation'
     get:
       operationId: consulter_affectation_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter une affectation de compteur
       description: Retourne une période d’affectation et ses index figés.
       tags:
@@ -2092,32 +3047,41 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-001
+        - BS-CPT-011
       x-hydrosea-rm:
-        - RM-AFF
+        - RM-CPT-004
+        - RM-CPT-007
       x-hydrosea-evt:
-        - EVT-AFF-001
+        - AUCUN_EVENEMENT_PRODUIT
       x-hydrosea-tables:
         - cpt.affectation_compteur
-  /v1/affectations-compteur/{identifiant_affectation}/cloturer:
-    parameters:
-      - $ref: '#/components/parameters/IdentifiantAffectation'
-    post:
-      operationId: cloturer_affectation_compteur
-      summary: Clôturer une affectation de compteur
-      description: Clôture la période sans suppression physique.
+    patch:
+      operationId: corriger_affectation_compteur
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
+      summary: Corriger une Affectation de compteur
+      description: Crée une rectification historisée d’une borne, d’un index, d’une qualité ou d’une référence d’intervention sans écraser les valeurs d’origine. Cette opération administrative prospective ne pose, ne dépose et ne remplace aucun Compteur.
       tags:
         - Comptage
       security:
         - oauth2:
-            - comptage:ecriture
+            - comptage:administration
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
         - $ref: '#/components/parameters/IfMatch'
         - $ref: '#/components/parameters/XCorrelationId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrigerAffectationCompteur'
       responses:
         '200':
-          description: Affectation clôturée
+          description: Rectification enregistrée
           content:
             application/json:
               schema:
@@ -2137,16 +3101,24 @@ paths:
         '500':
           $ref: '#/components/responses/ErreurInterne'
       x-hydrosea-bs:
-        - BS-CPT-002
+        - BS-CPT-012
       x-hydrosea-rm:
-        - RM-AFF
+        - RM-CPT-005
+        - RM-CPT-007
+        - RM-CPT-012
+        - RM-CPT-017
       x-hydrosea-evt:
-        - EVT-AFF-003
+        - EVT-CPT-011
       x-hydrosea-tables:
         - cpt.affectation_compteur
   /v1/releves:
     get:
       operationId: rechercher_releves
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des relèves
       description: Recherche paginée par compteur, Point, statut et période.
       tags:
@@ -2206,6 +3178,11 @@ paths:
         - cpt.releve
     post:
       operationId: enregistrer_releve
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Enregistrer une relève
       description: Enregistre une observation sans modifier une relève validée.
       tags:
@@ -2253,6 +3230,11 @@ paths:
   /v1/releves/importer:
     post:
       operationId: importer_releves
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Importer un lot de relèves
       description: Retourne un bilan ligne par ligne ; le seuil de traitement asynchrone est à arbitrer.
       tags:
@@ -2308,6 +3290,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantReleve'
     get:
       operationId: consulter_releve
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter une relève
       description: Retourne la mesure, son origine et son état de contrôle.
       tags:
@@ -2347,6 +3334,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantReleve'
     post:
       operationId: valider_releve
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Valider une relève
       description: Valide la relève après contrôles automatiques ou manuels.
       tags:
@@ -2392,6 +3384,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantReleve'
     post:
       operationId: rejeter_releve
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rejeter une relève
       description: Rejette la relève avec un motif explicite.
       tags:
@@ -2448,6 +3445,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantReleve'
     post:
       operationId: corriger_releve
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Corriger une relève
       description: Crée une nouvelle relève liée à l’originale ; aucune réécriture silencieuse.
       tags:
@@ -2500,6 +3502,11 @@ paths:
   /v1/factures:
     get:
       operationId: rechercher_factures
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des factures
       description: Recherche paginée par contrat, statut, référence et période.
       tags:
@@ -2564,6 +3571,11 @@ paths:
   /v1/factures/calculer:
     post:
       operationId: calculer_factures
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Calculer des brouillons de facture
       description: Commande le calcul sans définir la tarification dans OpenAPI.
       tags:
@@ -2608,6 +3620,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     get:
       operationId: consulter_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter une facture
       description: Retourne la pièce et ses montants sans document binaire.
       tags:
@@ -2647,6 +3664,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     post:
       operationId: emettre_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Émettre une facture
       description: Fige et émet un brouillon validé ; la diffusion documentaire reste à arbitrer.
       tags:
@@ -2696,6 +3718,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     post:
       operationId: corriger_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Corriger une facture
       description: Crée une pièce de correction ou un avoir lié ; le lettrage définitif reste à arbitrer.
       tags:
@@ -2759,6 +3786,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     post:
       operationId: annuler_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Annuler une facture
       description: Annule la pièce selon son état et conserve l’historique.
       tags:
@@ -2815,6 +3847,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     get:
       operationId: consulter_lignes_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter les lignes d’une facture
       description: Retourne le détail figé de la pièce.
       tags:
@@ -2856,6 +3893,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantFacture'
     get:
       operationId: consulter_releves_facture
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter les relèves d’une facture
       description: Retourne les mesures figées utilisées comme preuves de calcul.
       tags:
@@ -2897,6 +3939,11 @@ paths:
   /v1/paiements:
     get:
       operationId: rechercher_paiements
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des paiements
       description: Recherche paginée par référence, statut, Tiers payeur ou période.
       tags:
@@ -2955,6 +4002,11 @@ paths:
         - pai.paiement
     post:
       operationId: enregistrer_paiement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Enregistrer un paiement
       description: Enregistre un paiement idempotent par clé et référence externe.
       tags:
@@ -3001,6 +4053,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantPaiement'
     get:
       operationId: consulter_paiement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Consulter un paiement
       description: Retourne le paiement et son montant restant disponible.
       tags:
@@ -3041,6 +4098,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantPaiement'
     post:
       operationId: imputer_paiement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Imputer un paiement
       description: Répartit le montant sur plusieurs factures sous contrôle bilatéral des plafonds.
       tags:
@@ -3100,6 +4162,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantPaiement'
     post:
       operationId: contrepasser_imputation_paiement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Contrepasser une imputation de paiement
       description: Crée une contrepassation identique sans supprimer l’imputation d’origine.
       tags:
@@ -3160,6 +4227,11 @@ paths:
       - $ref: '#/components/parameters/IdentifiantPaiement'
     post:
       operationId: rembourser_paiement
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rembourser un paiement
       description: Commande un décaissement lié ; les conditions définitives relèvent de BS-PAI-002.
       tags:
@@ -3218,6 +4290,11 @@ paths:
   /v1/evenements-metier:
     get:
       operationId: rechercher_evenements_metier
+      x-hydrosea-disponibilite:
+        statut: prospectif
+        implementation: non_disponible
+        depot_cible: hydrosea-app
+        condition_activation: arbitrages_metier_valides
       summary: Rechercher des événements métier
       description: Lecture contrôlée et minimisée ; aucune charge complète ni opération d’écriture n’est exposée.
       tags:
@@ -3426,8 +4503,20 @@ components:
               readOnly: true
             statut:
               type: string
-              example: BROUILLON
+              enum:
+                - BROUILLON
+                - A_VALIDER
+                - VALIDE
+                - ACTIF
+                - SUSPENDU
+                - RESILIE
+                - ANNULE
               readOnly: true
+            nature_abonnement:
+              type: string
+            date_demande:
+              type: string
+              format: date-time
             date_effet:
               type: string
               format: date-time
@@ -3446,6 +4535,10 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ParticipationContrat'
+            preferences_facturation:
+              $ref: '#/components/schemas/PreferencesFacturationContrat'
+            preferences_reglement:
+              $ref: '#/components/schemas/PreferencesReglementContrat'
     ParticipationContrat:
       allOf:
         - $ref: '#/components/schemas/IdentiteVersionnee'
@@ -3465,7 +4558,9 @@ components:
               format: uuid
             role_contractuel:
               type: string
-              example: TITULAIRE
+              enum:
+                - TITULAIRE_PRINCIPAL
+                - SOLIDAIRE
             principal:
               type: boolean
             responsabilite_financiere:
@@ -3478,6 +4573,9 @@ components:
               format: date-time
             motif_fin:
               type: string
+            ordre_affichage:
+              type: integer
+              minimum: 1
     PointDesserte:
       allOf:
         - $ref: '#/components/schemas/IdentiteVersionnee'
@@ -3485,7 +4583,6 @@ components:
           required:
             - identifiant_point_desserte
             - reference
-            - identifiant_sig
             - statut
           properties:
             identifiant_point_desserte:
@@ -3951,28 +5048,44 @@ components:
           PERSONNE_PHYSIQUE: '#/components/schemas/CreerTiersPersonnePhysique'
           PERSONNE_MORALE: '#/components/schemas/CreerTiersPersonneMorale'
     ModifierTiers:
-      type: object
-      additionalProperties: false
-      minProperties: 1
-      properties:
-        personne_physique:
-          $ref: '#/components/schemas/PersonnePhysique'
-        personne_morale:
-          $ref: '#/components/schemas/PersonneMorale'
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required:
+            - personne_physique
+          properties:
+            personne_physique:
+              $ref: '#/components/schemas/PersonnePhysique'
+        - type: object
+          additionalProperties: false
+          required:
+            - personne_morale
+          properties:
+            personne_morale:
+              $ref: '#/components/schemas/PersonneMorale'
+      description: Une et une seule spécialisation complète est obligatoire. RM-TIE-003 contrôle sa compatibilité avec la catégorie existante.
     CreerContratAbonnement:
       type: object
       additionalProperties: false
       required:
-        - date_effet
+        - date_demande
+        - date_effet_souhaitee
+        - nature_abonnement
         - identifiant_point_consommation
         - participants
       properties:
-        date_effet:
+        date_demande:
           type: string
           format: date-time
-        date_fin:
+        date_effet_souhaitee:
           type: string
           format: date-time
+        date_fin_prevue:
+          type: string
+          format: date-time
+        nature_abonnement:
+          type: string
+          minLength: 1
         identifiant_point_consommation:
           type: string
           format: uuid
@@ -3981,47 +5094,300 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/CreerParticipationContrat'
+        preferences_facturation:
+          $ref: '#/components/schemas/PreferencesFacturationContrat'
+        preferences_reglement:
+          $ref: '#/components/schemas/PreferencesReglementContrat'
+        references_documents:
+          type: array
+          items:
+            type: string
     CreerParticipationContrat:
+      description: Deux variantes exclusives. Les booléens redondants restent imposés pour expliciter les invariants jusqu’à arbitrage de leur suppression.
+      oneOf:
+        - title: Titulaire principal
+          type: object
+          additionalProperties: false
+          required:
+            - identifiant_tiers
+            - role_contractuel
+            - principal
+            - responsabilite_financiere
+            - ordre_affichage
+            - date_debut_validite
+            - motif_debut
+          properties:
+            identifiant_tiers:
+              type: string
+              format: uuid
+            role_contractuel:
+              const: TITULAIRE_PRINCIPAL
+            principal:
+              const: true
+            responsabilite_financiere:
+              const: true
+            ordre_affichage:
+              type: integer
+              minimum: 1
+            date_debut_validite:
+              type: string
+              format: date-time
+            motif_debut:
+              type: string
+              minLength: 1
+        - title: Tiers solidaire
+          type: object
+          additionalProperties: false
+          required:
+            - identifiant_tiers
+            - role_contractuel
+            - principal
+            - responsabilite_financiere
+            - ordre_affichage
+            - date_debut_validite
+            - motif_debut
+          properties:
+            identifiant_tiers:
+              type: string
+              format: uuid
+            role_contractuel:
+              const: SOLIDAIRE
+            principal:
+              const: false
+            responsabilite_financiere:
+              const: true
+            ordre_affichage:
+              type: integer
+              minimum: 1
+            date_debut_validite:
+              type: string
+              format: date-time
+            motif_debut:
+              type: string
+              minLength: 1
+    PreferencesFacturationContrat:
       type: object
       additionalProperties: false
-      required:
-        - identifiant_tiers
-        - role_contractuel
-        - principal
-        - date_debut_validite
+      description: Nomenclatures initiales révisables avant implémentation après arbitrage métier.
       properties:
-        identifiant_tiers:
+        canal:
           type: string
-          format: uuid
-        role_contractuel:
+          enum:
+            - PAPIER
+            - ELECTRONIQUE
+            - PORTAIL
+        frequence:
           type: string
-        principal:
+          enum:
+            - SELON_CYCLE
+            - MENSUELLE
+            - TRIMESTRIELLE
+            - SEMESTRIELLE
+            - ANNUELLE
+        regroupement_souhaite:
           type: boolean
-        responsabilite_financiere:
-          type: boolean
-        date_debut_validite:
+    PreferencesReglementContrat:
+      type: object
+      additionalProperties: false
+      description: Nomenclature initiale révisable avant implémentation après arbitrage métier.
+      properties:
+        moyen_souhaite:
           type: string
-          format: date-time
+          enum:
+            - AUCUN
+            - PRELEVEMENT
+            - VIREMENT
+            - CHEQUE
+            - CARTE
+            - ESPECES
+            - PAYFIP
+        mensualisation_souhaitee:
+          type: boolean
     ModifierContratAbonnement:
       type: object
       additionalProperties: false
       minProperties: 1
       properties:
-        date_effet:
+        date_fin_prevue:
           type: string
           format: date-time
-        date_fin:
+        preferences_facturation:
+          $ref: '#/components/schemas/PreferencesFacturationContrat'
+        preferences_reglement:
+          $ref: '#/components/schemas/PreferencesReglementContrat'
+        motif_modification:
+          type: string
+          minLength: 1
+    ModifierParticipationContrat:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        responsabilite_financiere:
+          type: boolean
+        ordre_affichage:
+          type: integer
+          minimum: 1
+        motif_modification:
+          type: string
+          minLength: 1
+    ValiderContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - decision
+      properties:
+        decision:
+          type: string
+          enum:
+            - VALIDER
+            - RETOURNER_BROUILLON
+        motif_retour:
+          type: string
+        references_documents:
+          type: array
+          items:
+            type: string
+    ActiverContrat:
+      type: object
+      additionalProperties: false
+      properties:
+        date_activation:
           type: string
           format: date-time
+        activation_forcee:
+          type: boolean
+        motif_forcage:
+          type: string
+    SuspendreContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - code_motif
+        - date_debut
+      properties:
+        code_motif:
+          type: string
+          minLength: 1
+        date_debut:
+          type: string
+          format: date-time
+        date_fin_prevue:
+          type: string
+          format: date-time
+        reference_justificatif:
+          type: string
+    ReactiverContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - code_motif
+        - date_reactivation
+      properties:
+        code_motif:
+          type: string
+          minLength: 1
+        date_reactivation:
+          type: string
+          format: date-time
+        reference_justificatif:
+          type: string
+    AnnulerContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - code_motif
+        - date_annulation
+      properties:
+        code_motif:
+          type: string
+          minLength: 1
+        date_annulation:
+          type: string
+          format: date-time
+        identifiant_decisionnaire:
+          type: string
+          format: uuid
+        reference_justificatif:
+          type: string
+    ResilierContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - date_demande
+        - date_resiliation
+        - code_motif
+      properties:
+        date_demande:
+          type: string
+          format: date-time
+        date_resiliation:
+          type: string
+          format: date-time
+        code_motif:
+          type: string
+          minLength: 1
+        identifiant_releve_finale:
+          type: string
+          format: uuid
+        justification_absence_releve:
+          type: string
+        references_documents:
+          type: array
+          items:
+            type: string
+    MuterContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_tiers_entrant
+        - date_mutation
+        - nature_abonnement_entrant
+      properties:
+        identifiant_tiers_entrant:
+          type: string
+          format: uuid
+        date_mutation:
+          type: string
+          format: date-time
+        nature_abonnement_entrant:
+          type: string
+          minLength: 1
+        identifiant_releve_mutation:
+          type: string
+          format: uuid
+        justification_absence_releve:
+          type: string
+        transfert_coordonnees_autorise:
+          type: boolean
+        references_documents_entrants:
+          type: array
+          items:
+            type: string
+    CloturerParticipationContrat:
+      type: object
+      additionalProperties: false
+      required:
+        - date_fin_validite
+        - motif_fin
+      properties:
+        date_fin_validite:
+          type: string
+          format: date-time
+        motif_fin:
+          type: string
+          minLength: 1
     CreerPointConsommation:
       type: object
       additionalProperties: false
       required:
         - usage
-        - identifiant_point_desserte
-        - date_debut_validite
+        - identifiant_adresse
+        - date_preparation
       properties:
         usage:
+          type: string
+        nature_activite_habitation:
           type: string
         identifiant_adresse:
           type: string
@@ -4029,9 +5395,17 @@ components:
         identifiant_point_desserte:
           type: string
           format: uuid
-        date_debut_validite:
+        date_debut_rattachement:
           type: string
           format: date-time
+        date_preparation:
+          type: string
+          format: date-time
+        identifiant_tournee:
+          type: string
+        rang:
+          type: integer
+          minimum: 1
     ModifierPointConsommation:
       type: object
       additionalProperties: false
@@ -4039,14 +5413,244 @@ components:
       properties:
         usage:
           type: string
+        nature_activite_habitation:
+          type: string
+        rang:
+          type: integer
+          minimum: 1
+        motif_modification:
+          type: string
+    CreerPointDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_commune
+        - identifiant_adresse
+        - origine
+        - date_creation_metier
+      properties:
+        identifiant_commune:
+          type: string
+          description: Identifiant interne du référentiel HydroSEA des communes, synchronisé avec le code INSEE.
         identifiant_adresse:
           type: string
           format: uuid
+          description: Clé interne HydroSEA de ref.adresse ; ce n’est jamais un identifiant BAN.
+        references_parcelles:
+          type: array
+          items:
+            type: string
+        localisation_operationnelle:
+          $ref: '#/components/schemas/LocalisationOperationnelle'
+        origine:
+          type: string
+        date_creation_metier:
+          type: string
+          format: date-time
+        reference_demande_travaux:
+          type: string
+    ModifierLocalisationPointDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - source
+        - date_effet
+        - motif
+      properties:
+        identifiant_adresse:
+          type: string
+          format: uuid
+        localisation_operationnelle:
+          $ref: '#/components/schemas/LocalisationOperationnelle'
+        source:
+          type: string
+        date_effet:
+          type: string
+          format: date-time
+        motif:
+          type: string
+    SynchroniserPointDesserteSig:
+      type: object
+      additionalProperties: false
+      required:
+        - systeme_source
+        - identifiant_sig
+        - version_sig
+        - date_synchronisation
+        - resultat
+      properties:
+        systeme_source:
+          type: string
+        identifiant_sig:
+          type: string
+        version_sig:
+          type: string
+        date_synchronisation:
+          type: string
+          format: date-time
+        resultat:
+          type: string
+          enum:
+            - CORRELE
+            - MIS_A_JOUR
+            - REJETE
+        motif_rejet:
+          type: string
+    ChangerDisponibilitePointDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - date_effet
+        - motif
+      properties:
+        date_effet:
+          type: string
+          format: date-time
+        date_fin_prevue:
+          type: string
+          format: date-time
+        motif:
+          type: string
+    RetirerPointDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - date_retrait
+        - motif
+      properties:
+        date_retrait:
+          type: string
+          format: date-time
+        motif:
+          type: string
+        reference_decision:
+          type: string
+    OuvrirPointConsommation:
+      type: object
+      additionalProperties: false
+      required:
+        - date_ouverture
+      properties:
+        date_ouverture:
+          type: string
+          format: date-time
+        reference_decision:
+          type: string
+    FermerPointConsommation:
+      type: object
+      additionalProperties: false
+      required:
+        - date_fermeture
+        - motif
+      properties:
+        date_fermeture:
+          type: string
+          format: date-time
+        motif:
+          type: string
+        reference_decision:
+          type: string
+    ReouvrirPointConsommation:
+      type: object
+      additionalProperties: false
+      required:
+        - date_reouverture
+        - motif
+      properties:
+        date_reouverture:
+          type: string
+          format: date-time
+        motif:
+          type: string
+    CreerRattachementDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_point_desserte
+        - date_debut
+        - motif_debut
+      properties:
+        identifiant_point_desserte:
+          type: string
+          format: uuid
+        date_debut:
+          type: string
+          format: date-time
+        motif_debut:
+          type: string
+    CloturerRattachementDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - date_fin
+        - motif_fin
+      properties:
+        date_fin:
+          type: string
+          format: date-time
+        motif_fin:
+          type: string
+    ChangerRattachementDesserte:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_nouvelle_desserte
+        - date_effet
+        - motif
+      properties:
+        identifiant_nouvelle_desserte:
+          type: string
+          format: uuid
+        date_effet:
+          type: string
+          format: date-time
+        motif:
+          type: string
+    AffecterTourneeReleve:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_tournee
+        - date_effet
+        - motif
+      properties:
+        identifiant_tournee:
+          type: string
+        date_effet:
+          type: string
+          format: date-time
+        motif:
+          type: string
+    CorrigerAdressePointConsommation:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_adresse
+        - source
+        - date_effet
+        - motif
+      description: Corrige uniquement l’adresse de situation administrative du Point de consommation, sans modifier une adresse de Tiers, de Contrat, de facturation ou d’envoi.
+      properties:
+        identifiant_adresse:
+          type: string
+          format: uuid
+          description: Clé interne HydroSEA de ref.adresse.
+        identifiant_ban:
+          type: string
+          description: Identifiant externe BAN facultatif associé à l’adresse ; distinct de la clé HydroSEA.
+        source:
+          type: string
+        date_effet:
+          type: string
+          format: date-time
+        motif:
+          type: string
     CreerCompteur:
       type: object
       additionalProperties: false
       required:
         - numero_serie
+        - fabricant
       properties:
         numero_serie:
           type: string
@@ -4056,10 +5660,44 @@ components:
           type: string
         calibre:
           type: string
+        technologie:
+          type: string
+        annee_fabrication:
+          type: integer
+        classe_metrologique:
+          type: string
+        sens_pose:
+          type: string
+        type_compteur:
+          type: string
+        type_lecture:
+          type: string
+        capacite_telereleve:
+          type: boolean
+        identifiant_module_radio:
+          type: string
+        protocole_radio:
+          type: string
+        date_acquisition:
+          type: string
+          format: date
+        date_reception:
+          type: string
+          format: date
+        provenance:
+          type: string
+        lot:
+          type: string
+        fournisseur:
+          type: string
+        garantie_jusquau:
+          type: string
+          format: date
     ModifierCompteur:
       type: object
       additionalProperties: false
-      minProperties: 1
+      required:
+        - motif
       properties:
         fabricant:
           type: string
@@ -4067,13 +5705,249 @@ components:
           type: string
         calibre:
           type: string
+        technologie:
+          type: string
+        classe_metrologique:
+          type: string
+        sens_pose:
+          type: string
+        type_compteur:
+          type: string
+        type_lecture:
+          type: string
+        capacite_telereleve:
+          type: boolean
+        identifiant_module_radio:
+          type: string
+        protocole_radio:
+          type: string
+        garantie_jusquau:
+          type: string
+          format: date
+        motif:
+          type: string
+    PoserCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_point_consommation
+        - date_pose
+        - index_pose
+        - unite
+        - motif
+        - reference_intervention
+      properties:
+        identifiant_point_consommation:
+          type: string
+          format: uuid
+        date_pose:
+          type: string
+          format: date-time
+        index_pose:
+          type: number
+          minimum: 0
+        unite:
+          type: string
+        qualite_index:
+          type: string
+          enum:
+            - LU
+            - ESTIME
+        motif:
+          type: string
+        reference_intervention:
+          type: string
+        agent_ou_entreprise:
+          type: string
+        scelle:
+          type: string
+        sens_pose:
+          type: string
+        fonction_affectation:
+          type: string
+    DeposerCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - date_depose
+        - motif
+        - reference_intervention
+        - devenir
+      anyOf:
+        - properties:
+            index_depose:
+              type: number
+              minimum: 0
+          required:
+            - index_depose
+        - properties:
+            justification_index_absent:
+              type: string
+              minLength: 1
+          required:
+            - justification_index_absent
+      properties:
+        date_depose:
+          type: string
+          format: date-time
+        index_depose:
+          type: number
+          minimum: 0
+        unite:
+          type: string
+        qualite_index:
+          type: string
+          enum:
+            - LU
+            - ESTIME
+            - ILLISIBLE
+            - ABSENT
+        justification_index_absent:
+          type: string
+        motif:
+          type: string
+        reference_intervention:
+          type: string
+        devenir:
+          type: string
+          enum:
+            - EN_STOCK
+            - EN_CONTROLE
+            - HORS_SERVICE
+            - REFORME
+    RemplacerCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - identifiant_compteur_entrant
+        - date_remplacement
+        - index_depose
+        - index_pose
+        - unite
+        - motif
+        - reference_intervention
+      properties:
+        identifiant_compteur_entrant:
+          type: string
+          format: uuid
+        date_remplacement:
+          type: string
+          format: date-time
+        index_depose:
+          type: number
+          minimum: 0
+        index_pose:
+          type: number
+          minimum: 0
+        unite:
+          type: string
+        qualite_index_depose:
+          type: string
+        qualite_index_pose:
+          type: string
+        motif:
+          type: string
+        reference_intervention:
+          type: string
+        devenir_compteur_sortant:
+          type: string
+          enum:
+            - EN_STOCK
+            - EN_CONTROLE
+            - HORS_SERVICE
+            - REFORME
+    ReformerCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - date_reforme
+        - motif_reforme
+        - decisionnaire
+      properties:
+        date_reforme:
+          type: string
+          format: date-time
+        motif_reforme:
+          type: string
+        decisionnaire:
+          type: string
+        diagnostic:
+          type: string
+    MettreCompteurControle:
+      type: object
+      additionalProperties: false
+      required:
+        - date_controle
+        - motif
+      properties:
+        date_controle:
+          type: string
+          format: date-time
+        motif:
+          type: string
+        organisme:
+          type: string
+        reference_intervention:
+          type: string
+    RemettreCompteurDisponible:
+      type: object
+      additionalProperties: false
+      required:
+        - date_resultat
+        - resultat
+        - reference_controle
+      properties:
+        date_resultat:
+          type: string
+          format: date-time
+        resultat:
+          type: string
+          enum:
+            - FAVORABLE
+        reference_controle:
+          type: string
+        organisme:
+          type: string
+        motif:
+          type: string
+    CorrigerAffectationCompteur:
+      type: object
+      additionalProperties: false
+      required:
+        - motif_correction
+      minProperties: 2
+      properties:
+        date_debut_validite:
+          type: string
+          format: date-time
+        date_fin_validite:
+          type: string
+          format: date-time
+        index_pose:
+          type: number
+          minimum: 0
+        index_depose:
+          type: number
+          minimum: 0
+        unite:
+          type: string
+        qualite_index_pose:
+          type: string
+        qualite_index_depose:
+          type: string
+        reference_intervention:
+          type: string
+        motif_correction:
+          type: string
     CreerAffectationCompteur:
       type: object
       additionalProperties: false
+      description: Schéma interne non exposé par une opération autonome.
       required:
         - identifiant_compteur
         - identifiant_point_consommation
         - date_debut_validite
+        - index_pose
       properties:
         identifiant_compteur:
           type: string
@@ -4087,6 +5961,12 @@ components:
         index_pose:
           type: number
           minimum: 0
+        unite:
+          type: string
+        motif_pose:
+          type: string
+        reference_intervention:
+          type: string
     CreerReleve:
       type: object
       additionalProperties: false
@@ -4382,6 +6262,30 @@ components:
           const: PERSONNE_MORALE
         personne_morale:
           $ref: '#/components/schemas/PersonneMorale'
+    LocalisationOperationnelle:
+      type: object
+      additionalProperties: false
+      required:
+        - longitude
+        - latitude
+        - source
+        - date_source
+      properties:
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        source:
+          type: string
+        date_source:
+          type: string
+          format: date-time
+        provisoire:
+          type: boolean
   securitySchemes:
     oauth2:
       type: oauth2
@@ -4396,6 +6300,10 @@ components:
             contrats:ecriture: Écrire les contrats
             comptage:lecture: Lire les points, compteurs et relèves
             comptage:ecriture: Écrire les points, compteurs et relèves
+            comptage:administration: Réformer un Compteur et corriger l’historique métrologique
+            points:lecture: Consulter les Points de desserte et les Points de consommation
+            points:ecriture: Créer et modifier les Points, leurs cycles de vie et leurs rattachements
+            points:synchronisation: Corréler les Points de desserte avec le référentiel SIG
             facturation:lecture: Lire les factures
             facturation:ecriture: Commander la facturation
             paiements:lecture: Lire les paiements
@@ -4558,26 +6466,50 @@ components:
     ouverture:
       summary: Ouverture d’un contrat
       value:
-        date_effet: '2026-09-01T00:00:00Z'
+        date_demande: '2026-08-20T10:00:00Z'
+        date_effet_souhaitee: '2026-09-01T00:00:00Z'
+        nature_abonnement: EAU_POTABLE
         identifiant_point_consommation: 44444444-4444-4444-8444-444444444444
         participants:
           - identifiant_tiers: 11111111-1111-4111-8111-111111111111
-            role_contractuel: TITULAIRE
+            role_contractuel: TITULAIRE_PRINCIPAL
             principal: true
+            responsabilite_financiere: true
+            ordre_affichage: 1
             date_debut_validite: '2026-09-01T00:00:00Z'
+            motif_debut: SOUSCRIPTION
+          - identifiant_tiers: 22222222-2222-4222-8222-222222222222
+            role_contractuel: SOLIDAIRE
+            principal: false
+            responsabilite_financiere: true
+            ordre_affichage: 2
+            date_debut_validite: '2026-09-01T00:00:00Z'
+            motif_debut: SOLIDARITE_INITIALE
+        preferences_facturation:
+          canal: ELECTRONIQUE
+          frequence: SELON_CYCLE
+          regroupement_souhaite: false
+        preferences_reglement:
+          moyen_souhaite: PRELEVEMENT
+          mensualisation_souhaitee: true
     mutation:
       summary: Mutation vers un nouveau titulaire
       value:
         identifiant_tiers_entrant: 55555555-5555-4555-8555-555555555555
         date_mutation: '2026-10-01T08:00:00Z'
-        index_sortie: 512.75
+        nature_abonnement_entrant: EAU_POTABLE
+        identifiant_releve_mutation: 77777777-7777-4777-8777-777777777777
+        transfert_coordonnees_autorise: false
     remplacement:
       summary: Remplacement d’un compteur
       value:
-        identifiant_nouveau_compteur: 66666666-6666-4666-8666-666666666666
+        identifiant_compteur_entrant: 66666666-6666-4666-8666-666666666666
         date_remplacement: '2026-09-15T09:30:00Z'
         index_depose: 920.5
         index_pose: 0
+        unite: m3
+        motif: RENOUVELLEMENT
+        reference_intervention: OT-2026-42
     saisie_releve:
       summary: Saisie d’une relève
       value:

@@ -4,8 +4,12 @@
 /* eslint-disable */
 import type { PersonneMorale } from './PersonneMorale';
 import type { PersonnePhysique } from './PersonnePhysique';
-export type ModifierTiers = {
-    personne_physique?: PersonnePhysique;
-    personne_morale?: PersonneMorale;
-};
+/**
+ * Une et une seule spécialisation complète est obligatoire. RM-TIE-003 contrôle sa compatibilité avec la catégorie existante.
+ */
+export type ModifierTiers = ({
+    personne_physique: PersonnePhysique;
+} | {
+    personne_morale: PersonneMorale;
+});
 

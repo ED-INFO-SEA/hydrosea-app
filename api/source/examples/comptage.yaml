@@ -1,6 +1,6 @@
 remplacement:
   summary: Remplacement d’un compteur
-  value: {identifiant_nouveau_compteur: 66666666-6666-4666-8666-666666666666, date_remplacement: '2026-09-15T09:30:00Z', index_depose: 920.5, index_pose: 0}
+  value: {identifiant_compteur_entrant: 66666666-6666-4666-8666-666666666666, date_remplacement: '2026-09-15T09:30:00Z', index_depose: 920.5, index_pose: 0, unite: m3, motif: RENOUVELLEMENT, reference_intervention: OT-2026-42}
 saisie_releve:
   summary: Saisie d’une relève
   value: {identifiant_compteur: 66666666-6666-4666-8666-666666666666, valeur_index: 486.125, date_mesure: '2026-09-30T08:15:00Z', origine: MANUELLE, estimation: false}

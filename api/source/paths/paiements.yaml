@@ -5,6 +5,11 @@ x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/Idempotenc
 paiements:
   get:
     operationId: rechercher_paiements
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des paiements
     description: Recherche paginée par référence, statut, Tiers payeur ou période.
     tags: [Paiements]
@@ -17,6 +22,11 @@ paiements:
     x-hydrosea-tables: [pai.paiement]
   post:
     operationId: enregistrer_paiement
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Enregistrer un paiement
     description: Enregistre un paiement idempotent par clé et référence externe.
     tags: [Paiements]
@@ -32,6 +42,11 @@ paiement:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
   get:
     operationId: consulter_paiement
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter un paiement
     description: Retourne le paiement et son montant restant disponible.
     tags: [Paiements]
@@ -45,6 +60,11 @@ imputer:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
   post:
     operationId: imputer_paiement
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Imputer un paiement
     description: Répartit le montant sur plusieurs factures sous contrôle bilatéral des plafonds.
     tags: [Paiements]
@@ -60,6 +80,11 @@ contrepasser:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
   post:
     operationId: contrepasser_imputation_paiement
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Contrepasser une imputation de paiement
     description: Crée une contrepassation identique sans supprimer l’imputation d’origine.
     tags: [Paiements]
@@ -75,6 +100,11 @@ rembourser:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantPaiement'}]
   post:
     operationId: rembourser_paiement
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rembourser un paiement
     description: Commande un décaissement lié ; les conditions définitives relèvent de BS-PAI-002.
     tags: [Paiements]
