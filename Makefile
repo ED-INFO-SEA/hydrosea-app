@@ -19,6 +19,9 @@ demo:
 	@docker network inspect hydrosea_base_donnees >/dev/null 2>&1 || (echo "Démarrer hydrosea-infra avant la Preview." && exit 2)
 	@HYDROSEA_ENV=local ./scripts/preparer-keycloak-preview.sh
 	docker compose -f compose.dev.yaml up --build -d
+	@timeout 180 sh -c 'until curl --fail --silent http://localhost:8080/actuator/health >/dev/null && curl --fail --silent http://localhost:5173 >/dev/null; do sleep 3; done'
+	@docker compose -f compose.dev.yaml ps --status running | grep -q backend
+	@docker compose -f compose.dev.yaml ps --status running | grep -q frontend
 	@echo "HydroSEA : http://localhost:5173 — API : http://localhost:8080/actuator/health"
 	@echo "Comptes locaux préparés par Keycloak ; mots de passe dans les variables DEMO_*_PASSWORD."
 demo-reset:

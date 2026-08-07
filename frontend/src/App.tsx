@@ -1,8 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react';
-import { ApiError } from './api/genere';
+import { useEffect, useState } from 'react';
 import { keycloak } from './authentification';
-import { SelecteurAdresse, SelecteurPointConsommation } from './Selecteurs';
 import { GestionTiers } from './GestionTiers';
+import { GestionCompteurs, GestionContrats, GestionPoints } from './FichesPreview';
+import { useParcours } from './ContexteParcours';
 import './styles.css';
 
 type Page = 'Accueil' | 'Tiers' | 'Points' | 'Contrats' | 'Compteurs' | 'Synthèse' | 'Parcours';
@@ -16,8 +16,6 @@ const pages: Page[] = [
   'Synthèse',
   'Parcours',
 ];
-const libelle = (o: Objet) =>
-  String(o.reference ?? o.numero_serie ?? o.identifiant_tiers ?? o.id ?? 'Fiche');
 const api = async (path: string, options?: RequestInit) => {
   const r = await fetch(`/api/v1${path}`, {
     ...options,
@@ -34,88 +32,12 @@ const api = async (path: string, options?: RequestInit) => {
 export default function App() {
   const [authentifie, setAuthentifie] = useState(Boolean(keycloak.authenticated));
   const [page, setPage] = useState<Page>('Accueil');
-  const [objets, setObjets] = useState<Objet[]>([]);
-  const [selection, setSelection] = useState<Objet>();
-  const [erreur, setErreur] = useState('');
-  const [message, setMessage] = useState('');
   useEffect(() => {
     keycloak.onAuthSuccess = () => setAuthentifie(true);
     keycloak.onAuthLogout = () => setAuthentifie(false);
   }, []);
-  const charger = async (p = page) => {
-    const chemin =
-      p === 'Points'
-        ? '/points-consommation'
-        : p === 'Contrats'
-          ? '/contrats-abonnement'
-          : p === 'Compteurs'
-            ? '/compteurs'
-            : p === 'Tiers'
-              ? '/tiers'
-              : undefined;
-    if (!chemin) return;
-    try {
-      const r = (await api(chemin)) as { resultats?: Objet[] };
-      setObjets(r.resultats ?? []);
-    } catch (e) {
-      setErreur(
-        e instanceof ApiError ? 'La demande a été refusée.' : 'Service momentanément indisponible.',
-      );
-    }
-  };
-  useEffect(() => {
-    if (authentifie) void charger();
-  }, [authentifie, page]); // eslint-disable-line react-hooks/exhaustive-deps
   const naviguer = (p: Page) => {
     setPage(p);
-    setSelection(undefined);
-    setErreur('');
-    setMessage('');
-  };
-  const creer = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const d = new FormData(e.currentTarget);
-    let chemin = '';
-    let corps: Objet = {};
-    if (page === 'Points') {
-      chemin = '/points-consommation';
-      corps = {
-        usage: d.get('usage'),
-        identifiant_adresse: d.get('adresse'),
-        date_preparation: new Date().toISOString(),
-      };
-    }
-    if (page === 'Contrats') {
-      chemin = '/contrats-abonnement';
-      corps = {
-        nature_abonnement: d.get('nature'),
-        identifiant_point_consommation: d.get('point'),
-        date_demande: new Date().toISOString().slice(0, 10),
-        date_effet_souhaitee: d.get('effet'),
-        participants: [],
-      };
-    }
-    if (page === 'Compteurs') {
-      chemin = '/compteurs';
-      corps = {
-        numero_serie: d.get('serie'),
-        fabricant: d.get('fabricant'),
-        modele: d.get('modele'),
-        calibre: d.get('calibre'),
-      };
-    }
-    try {
-      const cree = await api(chemin, {
-        method: 'POST',
-        headers: { 'Idempotency-Key': crypto.randomUUID() },
-        body: JSON.stringify(corps),
-      });
-      setSelection(cree);
-      setMessage(`${page.slice(0, -1)} créé avec succès.`);
-      await charger();
-    } catch {
-      setErreur('Vérifiez les champs et les règles métier avant de recommencer.');
-    }
   };
   if (!authentifie)
     return (
@@ -163,56 +85,12 @@ export default function App() {
           </div>
           <span className="environnement">Démonstration locale</span>
         </header>
-        {erreur && (
-          <div className="alerte erreur" role="alert">
-            {erreur}
-          </div>
-        )}
-        {message && (
-          <div className="alerte succes" role="status">
-            {message}
-          </div>
-        )}
         {page === 'Accueil' && <Accueil naviguer={naviguer} />}{' '}
         {page === 'Parcours' && <Parcours naviguer={naviguer} />}{' '}
         {page === 'Synthèse' && <Synthese />} {page === 'Tiers' && <GestionTiers />}
-        {['Points', 'Contrats', 'Compteurs'].includes(page) && (
-          <section>
-            <div className="barre">
-              <input
-                aria-label={`Rechercher dans ${page}`}
-                placeholder="Référence, nom ou numéro…"
-              />
-              <button onClick={() => void charger()}>Rechercher</button>
-            </div>
-            <div className="colonnes">
-              <div>
-                <h2>{page}</h2>
-                <ul className="cartes">
-                  {objets.map((o, i) => (
-                    <li key={String(o.id ?? o.identifiant_tiers ?? i)}>
-                      <button onClick={() => setSelection(o)}>
-                        <strong>{libelle(o)}</strong>
-                        <span>{String(o.statut ?? o.usage ?? 'Actif')}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                {objets.length === 0 && (
-                  <p className="vide">Aucun résultat. Vous pouvez créer la première fiche.</p>
-                )}
-              </div>
-              <article>
-                <h2>{selection ? libelle(selection) : `Créer · ${page}`}</h2>
-                {selection ? (
-                  <Fiche objet={selection} />
-                ) : (
-                  <Formulaire page={page as 'Points' | 'Contrats' | 'Compteurs'} creer={creer} />
-                )}
-              </article>
-            </div>
-          </section>
-        )}
+        {page === 'Points' && <GestionPoints />}
+        {page === 'Contrats' && <GestionContrats />}
+        {page === 'Compteurs' && <GestionCompteurs />}
       </main>
     </div>
   );
@@ -264,7 +142,16 @@ function Accueil({ naviguer }: { naviguer: (p: Page) => void }) {
   );
 }
 function Parcours({ naviguer }: { naviguer: (p: Page) => void }) {
+  const { resultats } = useParcours();
   const etapes: Page[] = ['Tiers', 'Points', 'Contrats', 'Compteurs', 'Synthèse'];
+  const terminees = [
+    Boolean(resultats.tiers),
+    Boolean(resultats.pointConsommation),
+    Boolean(resultats.contrat),
+    Boolean(resultats.compteur),
+    false,
+  ];
+  const premiereAfaire = terminees.findIndex((v) => !v);
   return (
     <section>
       <span className="pastille">Mode guidé</span>
@@ -288,7 +175,12 @@ function Parcours({ naviguer }: { naviguer: (p: Page) => void }) {
                 }
               </p>
             </div>
-            <button onClick={() => naviguer(e)}>Ouvrir</button>
+            <span className="pastille">
+              {terminees[i] ? 'Terminé' : i === premiereAfaire ? 'En cours' : 'À faire'}
+            </span>
+            <button onClick={() => naviguer(e)}>
+              {i === premiereAfaire ? 'Continuer' : 'Ouvrir'}
+            </button>
           </li>
         ))}
       </ol>
@@ -296,6 +188,7 @@ function Parcours({ naviguer }: { naviguer: (p: Page) => void }) {
   );
 }
 function Synthese() {
+  const { resultats: resultatsParcours } = useParcours();
   const [points, setPoints] = useState<Objet[]>([]);
   const [point, setPoint] = useState('');
   const [dossier, setDossier] = useState<Objet>();
@@ -303,8 +196,12 @@ function Synthese() {
     void api('/points-consommation').then((page) => {
       const resultats = (page as { resultats?: Objet[] }).resultats ?? [];
       setPoints(resultats);
+      if (resultats.length && !point)
+        setPoint(
+          (resultats.find((p) => p.id === resultatsParcours.pointConsommation)?.id as string) ?? '',
+        );
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (point) void api(`/preview/dossiers/${point}`).then(setDossier);
   }, [point]);
@@ -357,85 +254,5 @@ function Synthese() {
         </>
       )}
     </section>
-  );
-}
-function Fiche({ objet }: { objet: Objet }) {
-  return (
-    <dl className="fiche">
-      {Object.entries(objet)
-        .filter(([, v]) => typeof v !== 'object' && v != null)
-        .slice(0, 12)
-        .map(([k, v]) => (
-          <div key={k}>
-            <dt>{k.replaceAll('_', ' ')}</dt>
-            <dd>{String(v)}</dd>
-          </div>
-        ))}
-    </dl>
-  );
-}
-function Formulaire({
-  page,
-  creer,
-}: {
-  page: 'Points' | 'Contrats' | 'Compteurs';
-  creer: (e: FormEvent<HTMLFormElement>) => void;
-}) {
-  const [adresse, setAdresse] = useState('');
-  const [point, setPoint] = useState('');
-  return (
-    <form className="formulaire" onSubmit={creer}>
-      {page === 'Points' && (
-        <>
-          <label>
-            Usage obligatoire
-            <input name="usage" required defaultValue="HABITATION" />
-          </label>
-          <label>
-            Adresse de situation
-            <SelecteurAdresse valeur={adresse} onChange={setAdresse} requis />
-            <input name="adresse" type="hidden" value={adresse} />
-          </label>
-        </>
-      )}
-      {page === 'Contrats' && (
-        <>
-          <label>
-            Nature d’abonnement
-            <input name="nature" required defaultValue="EAU_POTABLE" />
-          </label>
-          <label>
-            Point de consommation
-            <SelecteurPointConsommation valeur={point} onChange={setPoint} requis />
-            <input name="point" type="hidden" value={point} />
-          </label>
-          <label>
-            Date d’effet
-            <input name="effet" required type="date" />
-          </label>
-        </>
-      )}
-      {page === 'Compteurs' && (
-        <>
-          <label>
-            Numéro de série
-            <input name="serie" required />
-          </label>
-          <label>
-            Fabricant
-            <input name="fabricant" required />
-          </label>
-          <label>
-            Modèle
-            <input name="modele" />
-          </label>
-          <label>
-            Calibre
-            <input name="calibre" />
-          </label>
-        </>
-      )}
-      <button>Créer</button>
-    </form>
   );
 }

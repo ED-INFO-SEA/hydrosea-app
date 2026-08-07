@@ -1,8 +1,10 @@
 import { FormEvent, useEffect, useState } from 'react';
 import type { CreerTiers, ModifierTiers, Tiers } from './api/genere';
 import { apiTiers } from './api/tiers';
+import { useParcours } from './ContexteParcours';
 
 export function GestionTiers() {
+  const { memoriser } = useParcours();
   const [liste, setListe] = useState<Tiers[]>([]),
     [selection, setSelection] = useState<Tiers>(),
     [recherche, setRecherche] = useState('');
@@ -37,7 +39,9 @@ export function GestionTiers() {
             },
           };
     try {
-      setSelection(await apiTiers.creer(requete));
+      const cree = await apiTiers.creer(requete);
+      setSelection(cree);
+      memoriser('tiers', cree.identifiant_tiers);
       await charger();
       e.currentTarget.reset();
     } catch {
