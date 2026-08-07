@@ -63,8 +63,13 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByRole('button', { name: 'Compteurs', exact: true }).click();
   await page.getByPlaceholder('Numéro de série').fill(`E2E-${Date.now()}`);
   await page.getByPlaceholder('Fabricant').fill('HydroSEA');
-  await page.getByPlaceholder('Calibre').fill('15');
+  await page.getByPlaceholder('Calibre').fill('DN15');
+  const creationCompteur = page.waitForResponse(
+    (reponse) => reponse.url().endsWith('/compteurs') && reponse.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Enregistrer' }).click();
+  const reponseCompteur = await creationCompteur;
+  expect(reponseCompteur.status(), await reponseCompteur.text()).toBe(201);
   await page
     .getByRole('group', { name: 'Point de consommation' })
     .getByRole('combobox')

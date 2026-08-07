@@ -28,7 +28,7 @@ type Compteur = Identifie & {
   statut: string;
   fabricant: string;
   modele?: string;
-  calibre?: number;
+  calibre?: string;
 };
 type Affectation = {
   id: string;
@@ -528,7 +528,7 @@ export function GestionCompteurs() {
       numero_serie: d.get('serie'),
       fabricant: d.get('fabricant'),
       modele: d.get('modele'),
-      calibre: Number(d.get('calibre')),
+      calibre: d.get('calibre'),
     }).then((v) => {
       setSelection(v);
       memoriser('compteur', v.id);
@@ -553,7 +553,7 @@ export function GestionCompteurs() {
           <input name="serie" placeholder="Numéro de série" required />
           <input name="fabricant" placeholder="Fabricant" required />
           <input name="modele" placeholder="Modèle" />
-          <input name="calibre" type="number" placeholder="Calibre" required />
+          <input name="calibre" placeholder="Calibre" required />
           <button>Enregistrer</button>
         </form>
       </div>
