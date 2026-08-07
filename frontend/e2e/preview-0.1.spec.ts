@@ -32,7 +32,10 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByRole('button', { name: 'Points', exact: true }).click();
   await page.getByRole('combobox').last().selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Créer', exact: true }).last().click();
-  await page.getByLabel('Point de desserte').selectOption({ index: 1 });
+  await page
+    .getByRole('group', { name: 'Point de desserte' })
+    .getByRole('combobox')
+    .selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Rattacher' }).click();
   await page.getByRole('button', { name: 'Ouvrir' }).click();
   await expect(page.getByText('OUVERT')).toBeVisible();
@@ -41,7 +44,10 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByRole('combobox').first().selectOption({ index: 1 });
   await page.locator('input[type=date]').fill(new Date().toISOString().slice(0, 10));
   await page.getByRole('button', { name: 'Créer' }).click();
-  await page.getByLabel('Titulaire principal').selectOption({ index: 1 });
+  await page
+    .getByRole('group', { name: 'Tiers' })
+    .getByRole('combobox')
+    .selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Ajouter le titulaire principal' }).click();
   await page.getByRole('button', { name: 'Valider' }).click();
   await page.getByRole('button', { name: 'Activer' }).click();
@@ -52,7 +58,10 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByPlaceholder('Fabricant').fill('HydroSEA');
   await page.getByPlaceholder('Calibre').fill('15');
   await page.getByRole('button', { name: 'Enregistrer' }).click();
-  await page.getByLabel('Point courant').selectOption({ index: 1 });
+  await page
+    .getByRole('group', { name: 'Point de consommation' })
+    .getByRole('combobox')
+    .selectOption({ index: 1 });
   await page.getByLabel('Date de pose').fill(new Date().toISOString().slice(0, 16));
   await page.getByLabel('Index de pose').fill('0');
   await page.getByLabel('Référence d’intervention').fill('E2E-PREVIEW');
