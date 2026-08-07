@@ -1,6 +1,11 @@
 package fr.hydrosea.desserte.application;
 
-import static fr.hydrosea.desserte.application.ModelesDesserte.*;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointDesserte;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeModifierPointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeRattacherPointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.VuePointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.VuePointDesserte;
 import fr.hydrosea.evenements.application.PortEvenements;
 import java.util.List;
 import java.util.Map;

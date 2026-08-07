@@ -16,11 +16,13 @@ for(const [uri,chemin] of Object.entries(contrat.paths))for(const methode of ['g
   openapi.set(operation.operationId,{methode:methode.toUpperCase(),uri,scope:scopes[0],succes,corps:Boolean(schema)});
 }
 const implementees=new Map();
+const creation=new Set(['creer_point_desserte','creer_point_consommation','rattacher_point_consommation_desserte',
+  'creer_contrat_abonnement','ajouter_participant_contrat','enregistrer_compteur','poser_compteur']);
 const motif=/@OperationPreview\("([^"]+)"\)\s+@(Get|Post|Patch|Put|Delete)Mapping\("([^"]+)"\)([^\n]*)/g;
 for(const m of java.matchAll(motif)){
   const suite=m[4]; const scope=suite.match(/SCOPE_([^']+)/)?.[1];
   implementees.set(m[1],{methode:m[2].toUpperCase(),uri:`/v1${m[3]}`,scope,
-    succes:/ResponseStatus\(HttpStatus\.CREATED\)/.test(suite)?'201':'200',corps:/@RequestBody/.test(suite)});
+    succes:creation.has(m[1])?'201':'200',corps:/@RequestBody/.test(suite)});
 }
 const normaliser=uri=>uri.replace(/\{[^}]+\}/g,'{}');
 const erreurs=[];

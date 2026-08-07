@@ -1,6 +1,10 @@
 package fr.hydrosea.desserte.application;
 
-import static fr.hydrosea.desserte.application.ModelesDesserte.*;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointDesserte;
+import fr.hydrosea.desserte.application.ModelesDesserte.CommandeModifierPointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.VuePointConsommation;
+import fr.hydrosea.desserte.application.ModelesDesserte.VuePointDesserte;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
