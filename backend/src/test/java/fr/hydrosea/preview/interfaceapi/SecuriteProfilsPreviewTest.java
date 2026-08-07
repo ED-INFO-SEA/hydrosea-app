@@ -42,7 +42,7 @@ class SecuriteProfilsPreviewTest {
 
   @BeforeEach
   void preparerLectures() {
-    when(tiers.rechercher(null, null, null, null, 0, 20)).thenReturn(Page.empty());
+    when(tiers.rechercher(null, null, null, null, 1, 20)).thenReturn(Page.empty());
     when(desserte.listerDessertes()).thenReturn(List.of());
     when(abonnements.lister()).thenReturn(List.of());
     when(comptage.lister()).thenReturn(List.of());
