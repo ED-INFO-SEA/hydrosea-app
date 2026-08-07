@@ -21,8 +21,9 @@ jobs:
       - name: Refuser les fichiers générés obsolètes
         run: |
           sha256sum -c api/SHA256SUMS
-          test "$(cat api/VERSION)" = "307a7dd6a43e44bf7b2f52f8bc9fef3feb244a8b"
+          test "$(cat api/VERSION)" = "bdc49b2c1c641f1504fe8104275cf2a914692464"
           git diff --exit-code -- api/openapi.bundle.yaml frontend/src/api/genere
+          node tests/controle-preview.mjs
       - name: Analyser et tester le frontend
         working-directory: frontend
         run: |
