@@ -9,7 +9,7 @@ spring:
     url: ${POSTGRES_URL:jdbc:postgresql://localhost:5432/hydrosea}
     user: ${POSTGRES_MIGRATION_USER:hydrosea_migration}
     password: ${POSTGRES_MIGRATION_PASSWORD:}
-    schemas: ref,evt,app
+    schemas: ref,evt,app,des,abo,cpt
   jpa:
     open-in-view: false
     hibernate:
