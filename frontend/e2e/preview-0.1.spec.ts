@@ -51,7 +51,12 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByRole('button', { name: 'Ajouter le titulaire principal' }).click();
   const reponseTitulaire = await ajoutTitulaire;
   expect(reponseTitulaire.status(), await reponseTitulaire.text()).toBe(201);
+  const validationContrat = page.waitForResponse(
+    (reponse) => reponse.url().endsWith('/valider') && reponse.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Valider' }).click();
+  const reponseValidation = await validationContrat;
+  expect(reponseValidation.status(), await reponseValidation.text()).toBe(200);
   await page.getByRole('button', { name: 'Activer' }).click();
   await expect(page.getByText('ACTIF')).toBeVisible();
   await capture(page, '04-contrat-actif');
