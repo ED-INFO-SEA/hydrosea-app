@@ -38,7 +38,7 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
     .selectOption({ index: 1 });
   await page.getByRole('button', { name: 'Rattacher' }).click();
   await page.getByRole('button', { name: 'Ouvrir' }).click();
-  await expect(page.getByText('OUVERT')).toBeVisible();
+  await expect(page.getByLabel('Fiche Point de consommation').getByText('OUVERT')).toBeVisible();
   await capture(page, '03-point-ouvert');
   await page.getByRole('button', { name: 'Contrats', exact: true }).click();
   await page.getByRole('combobox').first().selectOption({ index: 1 });
@@ -58,7 +58,7 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   const reponseValidation = await validationContrat;
   expect(reponseValidation.status(), await reponseValidation.text()).toBe(200);
   await page.getByRole('button', { name: 'Activer' }).click();
-  await expect(page.getByText('ACTIF')).toBeVisible();
+  await expect(page.getByLabel('Fiche Contrat d’abonnement').getByText('ACTIF')).toBeVisible();
   await capture(page, '04-contrat-actif');
   await page.getByRole('button', { name: 'Compteurs', exact: true }).click();
   await page.getByPlaceholder('Numéro de série').fill(`E2E-${Date.now()}`);
@@ -78,7 +78,7 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByLabel('Index de pose').fill('0');
   await page.getByLabel('Référence d’intervention').fill('E2E-PREVIEW');
   await page.getByRole('button', { name: 'Poser' }).click();
-  await expect(page.getByText('POSE')).toBeVisible();
+  await expect(page.getByLabel('Fiche Compteur').getByText('POSE')).toBeVisible();
   await expect(page.getByText('Affectation active')).toBeVisible();
   await capture(page, '05-compteur-pose');
   await page.getByRole('button', { name: 'Synthèse' }).click();
