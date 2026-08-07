@@ -3,6 +3,7 @@ package fr.hydrosea.preview.interfaceapi;
 import fr.hydrosea.preview.application.ServicePreview;
 import fr.hydrosea.preview.application.ServiceLecturePreview;
 import fr.hydrosea.preview.application.ServiceLecturePreview.Indicateurs;
+import fr.hydrosea.preview.application.ServiceLecturePreview.Adresse;
 import fr.hydrosea.preview.application.ServiceLecturePreview.SyntheseDossier;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -51,5 +52,6 @@ public class ControleurPreview {
  @OperationPreview("consulter_affectation_compteur") @GetMapping("/affectations-compteur/{id}") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public Map<String,Object> affectation(@PathVariable UUID id){return service.obtenir("cpt.affectation_compteur",id);}
  @GetMapping("/preview/dossiers/{id}/activite") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public List<Map<String,Object>> activite(@PathVariable UUID id){return service.activite(id);}
  @GetMapping("/preview/indicateurs") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public Indicateurs indicateurs(){return lecture.indicateurs();}
+ @GetMapping("/preview/adresses") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public List<Adresse> adresses(){return lecture.adresses();}
  @GetMapping("/preview/dossiers/{id}") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public SyntheseDossier synthese(@PathVariable UUID id){return lecture.synthese(id);}
 }

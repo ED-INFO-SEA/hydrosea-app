@@ -5,6 +5,13 @@ CREATE SCHEMA IF NOT EXISTS cpt;
 CREATE SEQUENCE des.reference_point_desserte_seq;
 CREATE SEQUENCE des.reference_point_consommation_seq;
 CREATE SEQUENCE abo.reference_contrat_seq;
+CREATE TABLE ref.adresse (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), numero text, voie text NOT NULL, complement text,
+ code_postal varchar(5) NOT NULL, commune text NOT NULL, code_insee varchar(5) NOT NULL,
+ lieu_dit text, version integer NOT NULL DEFAULT 1, date_creation timestamptz NOT NULL DEFAULT now(),
+ date_modification timestamptz NOT NULL DEFAULT now(), cree_par uuid, modifie_par uuid, date_suppression timestamptz
+);
+CREATE INDEX idx_adresse_recherche_preview ON ref.adresse(commune,voie,code_postal);
 
 CREATE TABLE des.point_desserte (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), reference varchar(40) UNIQUE NOT NULL,

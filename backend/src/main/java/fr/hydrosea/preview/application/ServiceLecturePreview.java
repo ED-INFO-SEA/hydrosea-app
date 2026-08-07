@@ -17,6 +17,7 @@ public class ServiceLecturePreview {
         compter("SELECT count(*) FROM abo.contrat_abonnement WHERE statut='ACTIF'"),
         compter("SELECT count(*) FROM cpt.compteur WHERE statut='POSE'"));
   }
+  public List<Adresse> adresses() { return jdbc.query("SELECT id,numero,voie,code_postal,commune,lieu_dit FROM ref.adresse WHERE date_suppression IS NULL ORDER BY commune,voie,numero",(rs,n)->new Adresse(rs.getObject(1,UUID.class),rs.getString(2),rs.getString(3),rs.getString(4),rs.getString(5),rs.getString(6))); }
 
   public SyntheseDossier synthese(UUID point) {
     ResumeObjet consommation = objet("SELECT id,reference,statut,usage FROM des.point_consommation WHERE id=?", point);
@@ -36,6 +37,7 @@ public class ServiceLecturePreview {
   private ResumeObjet objetFacultatif(String sql,UUID id) { return jdbc.query(sql,(rs,n)->new ResumeObjet(rs.getObject(1,UUID.class),rs.getString(2),rs.getString(3),rs.getString(4)),id).stream().findFirst().orElse(null); }
   private static String libelle(String type) { return type.replace('_',' ').toLowerCase(); }
   public record Indicateurs(long tiersActifs,long pointsOuverts,long contratsActifs,long compteursPoses) {}
+  public record Adresse(UUID identifiant,String numero,String voie,String codePostal,String commune,String lieuDit) { public String libelle(){return String.join(" ",numero==null?"":numero,voie,codePostal,commune)+(lieuDit==null?"":" · "+lieuDit);}}
   public record ResumeObjet(UUID identifiant,String reference,String statut,String libelle) {}
   public record Activite(String typeEvenement,Instant dateMetier,String libelle,String typeAgregat,UUID identifiantAgregat,String referenceAgregat,String acteur,UUID correlation) {}
   public record SyntheseDossier(ResumeObjet pointConsommation,ResumeObjet pointDesserteCourant,ResumeObjet contratActif,ResumeObjet titulairePrincipal,ResumeObjet compteurActif,List<Activite> activiteRecente) {}

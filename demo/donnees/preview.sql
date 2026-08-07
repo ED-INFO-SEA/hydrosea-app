@@ -1,4 +1,9 @@
 BEGIN;
+INSERT INTO ref.adresse(id,numero,voie,code_postal,commune,code_insee,lieu_dit) VALUES
+ ('49000000-0000-0000-0000-000000000101','12','rue des Sources','49000','Ville-Fictive-sur-Maine','49001',NULL),
+ ('49000000-0000-0000-0000-000000000102','4','avenue du Château d Eau','49100','Monts-Fictifs','49002',NULL),
+ ('49000000-0000-0000-0000-000000000103',NULL,'route des Saules','49200','Val-des-Eaux','49003','La Petite Fontaine')
+ON CONFLICT (id) DO UPDATE SET voie=excluded.voie,commune=excluded.commune,date_modification=now();
 DELETE FROM cpt.affectation_compteur; DELETE FROM cpt.compteur; DELETE FROM abo.historique_etat_contrat; DELETE FROM abo.participation_contrat; DELETE FROM abo.contrat_abonnement; DELETE FROM des.liaison_desserte_consommation; DELETE FROM des.point_consommation; DELETE FROM des.point_desserte;
 INSERT INTO des.point_desserte(id,reference,statut,identifiant_commune,identifiant_adresse) VALUES ('10000000-0000-0000-0000-000000000001','PD-DEMO-001','DISPONIBLE','49000000-0000-0000-0000-000000000001','49000000-0000-0000-0000-000000000101');
 INSERT INTO des.point_consommation(id,reference,statut,usage,identifiant_adresse) VALUES ('20000000-0000-0000-0000-000000000001','PC-DEMO-001','OUVERT','HABITATION','49000000-0000-0000-0000-000000000101');

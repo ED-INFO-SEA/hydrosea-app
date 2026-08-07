@@ -1,6 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { ApiError } from './api/genere';
 import { keycloak } from './authentification';
+import { SelecteurAdresse, SelecteurPointConsommation } from './Selecteurs';
+import { GestionTiers } from './GestionTiers';
 import './styles.css';
 
 type Page = 'Accueil' | 'Tiers' | 'Points' | 'Contrats' | 'Compteurs' | 'Synthèse' | 'Parcours';
@@ -173,8 +175,8 @@ export default function App() {
         )}
         {page === 'Accueil' && <Accueil naviguer={naviguer} />}{' '}
         {page === 'Parcours' && <Parcours naviguer={naviguer} />}{' '}
-        {page === 'Synthèse' && <Synthese />}{' '}
-        {['Tiers', 'Points', 'Contrats', 'Compteurs'].includes(page) && (
+        {page === 'Synthèse' && <Synthese />} {page === 'Tiers' && <GestionTiers />}
+        {['Points', 'Contrats', 'Compteurs'].includes(page) && (
           <section>
             <div className="barre">
               <input
@@ -204,8 +206,6 @@ export default function App() {
                 <h2>{selection ? libelle(selection) : `Créer · ${page}`}</h2>
                 {selection ? (
                   <Fiche objet={selection} />
-                ) : page === 'Tiers' ? (
-                  <p>La création des Tiers est disponible depuis la fiche Tiers dédiée du socle.</p>
                 ) : (
                   <Formulaire page={page as 'Points' | 'Contrats' | 'Compteurs'} creer={creer} />
                 )}
@@ -381,6 +381,8 @@ function Formulaire({
   page: 'Points' | 'Contrats' | 'Compteurs';
   creer: (e: FormEvent<HTMLFormElement>) => void;
 }) {
+  const [adresse, setAdresse] = useState('');
+  const [point, setPoint] = useState('');
   return (
     <form className="formulaire" onSubmit={creer}>
       {page === 'Points' && (
@@ -390,8 +392,9 @@ function Formulaire({
             <input name="usage" required defaultValue="HABITATION" />
           </label>
           <label>
-            Identifiant de l’adresse
-            <input name="adresse" required placeholder="UUID de l’adresse" />
+            Adresse de situation
+            <SelecteurAdresse valeur={adresse} onChange={setAdresse} requis />
+            <input name="adresse" type="hidden" value={adresse} />
           </label>
         </>
       )}
@@ -403,7 +406,8 @@ function Formulaire({
           </label>
           <label>
             Point de consommation
-            <input name="point" required placeholder="UUID du Point" />
+            <SelecteurPointConsommation valeur={point} onChange={setPoint} requis />
+            <input name="point" type="hidden" value={point} />
           </label>
           <label>
             Date d’effet
