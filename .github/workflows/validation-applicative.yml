@@ -113,6 +113,10 @@ jobs:
           cd backend && mvn -B spring-boot:run > ../backend-e2e.log 2>&1 &
           cd frontend && npm ci && VITE_KEYCLOAK_URL=http://localhost:8081 npm run dev -- --host 127.0.0.1 > ../frontend-e2e.log 2>&1 &
           timeout 180 sh -c 'until curl -sS http://localhost:8080/actuator/health >/dev/null && curl -fsS http://127.0.0.1:5173 >/dev/null; do sleep 3; done'
+      - name: Initialiser les données fictives de la Preview
+        env:
+          POSTGRES_DEMO_URL: postgresql://postgres:postgres@localhost:5432/hydrosea
+        run: sh scripts/initialiser-demo.sh
       - name: Exécuter preview-0.1.spec.ts
         working-directory: frontend
         run: npm run test:e2e
