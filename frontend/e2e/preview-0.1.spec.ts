@@ -22,7 +22,7 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByRole('button', { name: 'Créer le Tiers' }).click();
   const reponseTiers = await creationTiers;
   expect(reponseTiers.status(), await reponseTiers.text()).toBe(201);
-  await expect(page.getByText(/TIE-/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /TIE-/ })).toBeVisible();
   await capture(page, '02-tiers-cree');
   await page.getByRole('button', { name: 'Points', exact: true }).click();
   await page.getByRole('combobox').first().selectOption({ index: 1 });
