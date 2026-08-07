@@ -83,7 +83,7 @@ jobs:
           docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
           docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms -s realm=hydrosea -s enabled=true
           docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r hydrosea -s clientId=hydrosea-web -s publicClient=true -s directAccessGrantsEnabled=true -s 'redirectUris=["http://127.0.0.1:5173/*"]' -s 'webOrigins=["http://127.0.0.1:5173"]'
-          docker exec keycloak /opt/keycloak/bin/kcadm.sh create users -r hydrosea -s username=administrateur-demo -s enabled=true
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create users -r hydrosea -s username=administrateur-demo -s enabled=true -s email=demo@hydrosea.local -s emailVerified=true -s firstName=Administrateur -s lastName=Démonstration
           docker exec keycloak /opt/keycloak/bin/kcadm.sh set-password -r hydrosea --username administrateur-demo --new-password demonstration
           for portee in tiers:lecture tiers:ecriture points:lecture points:ecriture contrats:lecture contrats:ecriture comptage:lecture comptage:ecriture; do
             docker exec keycloak /opt/keycloak/bin/kcadm.sh create client-scopes -r hydrosea -s name="$portee" -s protocol=openid-connect
