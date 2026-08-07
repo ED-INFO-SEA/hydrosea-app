@@ -45,7 +45,12 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.locator('input[type=date]').fill(new Date().toISOString().slice(0, 10));
   await page.getByRole('button', { name: 'Créer' }).click();
   await page.getByRole('group', { name: 'Tiers' }).getByRole('combobox').selectOption({ index: 1 });
+  const ajoutTitulaire = page.waitForResponse(
+    (reponse) => reponse.url().includes('/participants') && reponse.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Ajouter le titulaire principal' }).click();
+  const reponseTitulaire = await ajoutTitulaire;
+  expect(reponseTitulaire.status(), await reponseTitulaire.text()).toBe(201);
   await page.getByRole('button', { name: 'Valider' }).click();
   await page.getByRole('button', { name: 'Activer' }).click();
   await expect(page.getByText('ACTIF')).toBeVisible();
