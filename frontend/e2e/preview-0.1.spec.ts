@@ -14,8 +14,8 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.locator('#kc-login').click();
   await expect(page.getByRole('button', { name: 'Tiers', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Tiers', exact: true }).click();
-  await page.getByLabel('Nom').fill(`E2E-${Date.now()}`);
-  await page.getByLabel('Prénoms').fill('HydroSEA');
+  await page.getByRole('textbox', { name: 'Nom', exact: true }).fill(`E2E-${Date.now()}`);
+  await page.getByRole('textbox', { name: 'Prénoms', exact: true }).fill('HydroSEA');
   await page.getByRole('button', { name: 'Créer le Tiers' }).click();
   await expect(page.getByText(/TIE-/)).toBeVisible();
   await capture(page, '02-tiers-cree');
