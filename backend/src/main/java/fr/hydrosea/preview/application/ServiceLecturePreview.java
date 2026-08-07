@@ -28,7 +28,7 @@ public class ServiceLecturePreview {
     return new SyntheseDossier(consommation,desserte,contrat,titulaire,compteur,activite(point));
   }
 
-  private List<Activite> activite(UUID point) {
+  public List<Activite> activite(UUID point) {
     return jdbc.query("SELECT e.type_evenement,e.date_metier,e.type_agregat,e.agregat_id,e.correlation_id,COALESCE(pd.reference,pc.reference,ca.reference,c.numero_serie,t.reference) FROM evt.evenement_metier e LEFT JOIN des.point_desserte pd ON pd.id=e.agregat_id LEFT JOIN des.point_consommation pc ON pc.id=e.agregat_id LEFT JOIN abo.contrat_abonnement ca ON ca.id=e.agregat_id LEFT JOIN cpt.compteur c ON c.id=e.agregat_id LEFT JOIN ref.tiers t ON t.id=e.agregat_id WHERE e.agregat_id=? OR ca.point_consommation_id=? OR EXISTS(SELECT 1 FROM cpt.affectation_compteur a WHERE a.compteur_id=e.agregat_id AND a.point_consommation_id=?) ORDER BY e.date_metier DESC LIMIT 30",(rs,n)->new Activite(rs.getString(1),rs.getTimestamp(2).toInstant(),libelle(rs.getString(1)),rs.getString(3),rs.getObject(4,UUID.class),rs.getString(6),null,rs.getObject(5,UUID.class)),point,point,point);
   }
 
