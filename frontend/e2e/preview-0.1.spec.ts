@@ -4,14 +4,15 @@ const capture = async (page: import('@playwright/test').Page, nom: string) =>
 test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await page.goto('/');
+  await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible({ timeout: 30_000 });
   await capture(page, '01-accueil');
-  if (await page.getByRole('button', { name: 'Se connecter' }).isVisible()) {
-    await page.getByRole('button', { name: 'Se connecter' }).click();
-    await page.locator('#username').fill(process.env.PREVIEW_USER ?? 'administrateur-demo');
-    await page.locator('#password').fill(process.env.PREVIEW_PASSWORD ?? 'demonstration');
-    await page.locator('#kc-login').click();
-  }
+  await page.getByRole('button', { name: 'Se connecter' }).click();
+  await page.locator('#username').fill(process.env.PREVIEW_USER ?? 'administrateur-demo');
+  await page.locator('#password').fill(process.env.PREVIEW_PASSWORD ?? 'demonstration');
+  await page.locator('#kc-login').click();
+  await expect(page.getByRole('button', { name: 'Tiers', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Tiers', exact: true }).click();
   await page.getByRole('button', { name: /Créer une personne physique/i }).click();
   await page.getByLabel('Nom').fill(`E2E-${Date.now()}`);
