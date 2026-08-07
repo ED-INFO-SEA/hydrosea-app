@@ -91,6 +91,10 @@ jobs:
             client=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r hydrosea -q clientId=hydrosea-web --fields id | jq -r '.[0].id')
             docker exec keycloak /opt/keycloak/bin/kcadm.sh update "clients/$client/default-client-scopes/$identifiant" -r hydrosea
           done
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create client-scopes -r hydrosea -s name=hydrosea-audience -s protocol=openid-connect
+          audience=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get client-scopes -r hydrosea --fields id,name | jq -r '.[]|select(.name=="hydrosea-audience")|.id')
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create "client-scopes/$audience/protocol-mappers/models" -r hydrosea -s name=hydrosea-api -s protocol=openid-connect -s protocolMapper=oidc-audience-mapper -s 'config."included.custom.audience"=hydrosea-api' -s 'config."access.token.claim"=true'
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh update "clients/$client/default-client-scopes/$audience" -r hydrosea
       - name: Démarrer le backend et le frontend
         env:
           POSTGRES_URL: jdbc:postgresql://localhost:5432/hydrosea
@@ -100,7 +104,7 @@ jobs:
           POSTGRES_MIGRATION_PASSWORD: postgres
           KEYCLOAK_ISSUER: http://localhost:8081/realms/hydrosea
           KEYCLOAK_JWK_SET_URI: http://localhost:8081/realms/hydrosea/protocol/openid-connect/certs
-          KEYCLOAK_AUDIENCE: account
+          KEYCLOAK_AUDIENCE: hydrosea-api
           RABBITMQ_USER: guest
           RABBITMQ_PASSWORD: guest
           MINIO_ACCESS_KEY: hydrosea
