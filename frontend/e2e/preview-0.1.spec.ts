@@ -77,8 +77,13 @@ test('parcours métier complet Preview 0.1 sans saisie d’identifiant technique
   await page.getByLabel('Date de pose').fill(new Date().toISOString().slice(0, 16));
   await page.getByLabel('Index de pose').fill('0');
   await page.getByLabel('Référence d’intervention').fill('E2E-PREVIEW');
+  const poseCompteur = page.waitForResponse(
+    (reponse) => reponse.url().endsWith('/poser') && reponse.request().method() === 'POST',
+  );
   await page.getByRole('button', { name: 'Poser' }).click();
-  await expect(page.getByLabel('Fiche Compteur').getByText('POSE')).toBeVisible();
+  const reponsePose = await poseCompteur;
+  expect(reponsePose.status(), await reponsePose.text()).toBe(201);
+  await expect(page.getByLabel('Fiche Compteur').getByText('POSE', { exact: true })).toBeVisible();
   await expect(page.getByText('Affectation active')).toBeVisible();
   await capture(page, '05-compteur-pose');
   await page.getByRole('button', { name: 'Synthèse' }).click();
