@@ -39,10 +39,19 @@ CREATE TABLE abo.participation_contrat (
  tiers_id uuid NOT NULL REFERENCES ref.tiers, role_contractuel varchar(30) NOT NULL CHECK(role_contractuel IN ('TITULAIRE_PRINCIPAL','SOLIDAIRE')),
  principal boolean NOT NULL, responsabilite_financiere boolean NOT NULL DEFAULT true,
  periode daterange NOT NULL, version integer NOT NULL DEFAULT 1, date_creation timestamptz NOT NULL DEFAULT now(), date_modification timestamptz NOT NULL DEFAULT now(), cree_par uuid, modifie_par uuid,
- CONSTRAINT ck_participation_principal CHECK (NOT principal OR (role_contractuel='TITULAIRE_PRINCIPAL' AND responsabilite_financiere))
+ CONSTRAINT ck_participation_principal CHECK ((role_contractuel='TITULAIRE_PRINCIPAL' AND principal AND responsabilite_financiere) OR (role_contractuel='SOLIDAIRE' AND NOT principal))
 );
 CREATE UNIQUE INDEX uk_titulaire_principal_actif ON abo.participation_contrat(contrat_id) WHERE principal AND upper_inf(periode);
 CREATE UNIQUE INDEX uk_contrat_actif_point ON abo.contrat_abonnement(point_consommation_id) WHERE statut='ACTIF';
+CREATE TABLE abo.historique_etat_contrat (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), contrat_id uuid NOT NULL REFERENCES abo.contrat_abonnement,
+ etat varchar(20) NOT NULL CHECK(etat IN ('BROUILLON','A_VALIDER','VALIDE','ACTIF')),
+ date_debut_validite timestamptz NOT NULL DEFAULT now(), date_fin_validite timestamptz,
+ version_contrat integer NOT NULL, correlation_id uuid NOT NULL, acteur_id uuid,
+ CONSTRAINT ck_historique_etat_periode CHECK(date_fin_validite IS NULL OR date_fin_validite>date_debut_validite)
+);
+CREATE UNIQUE INDEX uk_historique_etat_courant ON abo.historique_etat_contrat(contrat_id) WHERE date_fin_validite IS NULL;
+CREATE INDEX idx_historique_etat_contrat ON abo.historique_etat_contrat(contrat_id,date_debut_validite DESC);
 
 CREATE TABLE cpt.compteur (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(), numero_serie varchar(100) UNIQUE NOT NULL,
