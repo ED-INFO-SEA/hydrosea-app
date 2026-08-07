@@ -1,6 +1,9 @@
 package fr.hydrosea.preview.interfaceapi;
 
 import fr.hydrosea.preview.application.ServicePreview;
+import fr.hydrosea.preview.application.ServiceLecturePreview;
+import fr.hydrosea.preview.application.ServiceLecturePreview.Indicateurs;
+import fr.hydrosea.preview.application.ServiceLecturePreview.SyntheseDossier;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +22,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController @RequestMapping("/v1")
 public class ControleurPreview {
- private final ServicePreview service; public ControleurPreview(ServicePreview service){this.service=service;}
+ private final ServicePreview service; private final ServiceLecturePreview lecture;
+ public ControleurPreview(ServicePreview service,ServiceLecturePreview lecture){this.service=service;this.lecture=lecture;}
  private int version(String valeur){return Integer.parseInt(valeur.replace("\"",""));}
  @GetMapping("/points-desserte") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public Map<String,Object> dessertes(){return Map.of("resultats",service.lister("des.point_desserte"),"page",0,"taille",100,"total",service.lister("des.point_desserte").size());}
  @PostMapping("/points-desserte") @ResponseStatus(HttpStatus.CREATED) @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public Map<String,Object> creerDesserte(@RequestBody Map<String,Object> c){return service.creerDesserte(c);}
@@ -46,4 +50,6 @@ public class ControleurPreview {
  @GetMapping("/affectations-compteur") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public Map<String,Object> affectations(){var l=service.lister("cpt.affectation_compteur");return Map.of("resultats",l,"page",0,"taille",100,"total",l.size());}
  @GetMapping("/affectations-compteur/{id}") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public Map<String,Object> affectation(@PathVariable UUID id){return service.obtenir("cpt.affectation_compteur",id);}
  @GetMapping("/preview/dossiers/{id}/activite") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public List<Map<String,Object>> activite(@PathVariable UUID id){return service.activite(id);}
+ @GetMapping("/preview/indicateurs") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public Indicateurs indicateurs(){return lecture.indicateurs();}
+ @GetMapping("/preview/dossiers/{id}") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public SyntheseDossier synthese(@PathVariable UUID id){return lecture.synthese(id);}
 }

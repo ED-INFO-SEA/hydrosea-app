@@ -218,6 +218,12 @@ export default function App() {
   );
 }
 function Accueil({ naviguer }: { naviguer: (p: Page) => void }) {
+  const [indicateurs, setIndicateurs] = useState<Record<string, number>>();
+  useEffect(() => {
+    void api('/preview/indicateurs').then((valeur) =>
+      setIndicateurs(valeur as Record<string, number>),
+    );
+  }, []);
   return (
     <>
       <section className="hero">
@@ -242,35 +248,18 @@ function Accueil({ naviguer }: { naviguer: (p: Page) => void }) {
       </section>
       <div className="indicateurs">
         {[
-          ['Tiers actifs', '24'],
-          ['Points ouverts', '18'],
-          ['Contrats actifs', '16'],
-          ['Compteurs posés', '15'],
+          ['Tiers actifs', indicateurs?.tiers_actifs],
+          ['Points ouverts', indicateurs?.points_ouverts],
+          ['Contrats actifs', indicateurs?.contrats_actifs],
+          ['Compteurs posés', indicateurs?.compteurs_poses],
         ].map(([l, v]) => (
-          <article key={l}>
+          <article key={String(l)}>
             <small>{l}</small>
-            <strong>{v}</strong>
-            <span>Jeu de démonstration</span>
+            <strong>{v ?? '—'}</strong>
+            <span>Données courantes</span>
           </article>
         ))}
       </div>
-      <section>
-        <h2>Activité récente</h2>
-        <div className="frise">
-          <p>
-            <time>09:42</time>
-            <b>Compteur posé</b> sur PC-DEMO-001
-          </p>
-          <p>
-            <time>09:37</time>
-            <b>Contrat activé</b> CA-DEMO-001
-          </p>
-          <p>
-            <time>09:31</time>
-            <b>Point ouvert</b> PC-DEMO-001
-          </p>
-        </div>
-      </section>
     </>
   );
 }
@@ -307,50 +296,66 @@ function Parcours({ naviguer }: { naviguer: (p: Page) => void }) {
   );
 }
 function Synthese() {
+  const [points, setPoints] = useState<Objet[]>([]);
+  const [point, setPoint] = useState('');
+  const [dossier, setDossier] = useState<Objet>();
+  useEffect(() => {
+    void api('/points-consommation').then((page) => {
+      const resultats = (page as { resultats?: Objet[] }).resultats ?? [];
+      setPoints(resultats);
+    });
+  }, []);
+  useEffect(() => {
+    if (point) void api(`/preview/dossiers/${point}`).then(setDossier);
+  }, [point]);
+  const resume = (nom: string) => dossier?.[nom] as Objet | undefined;
+  const activite = (dossier?.activite_recente as Objet[] | undefined) ?? [];
   return (
     <section>
-      <span className="pastille">Dossier complet</span>
-      <h2>PC-DEMO-001 · 12 rue des Sources</h2>
-      <div className="relations">
-        <article>
-          <small>Point de desserte</small>
-          <b>PD-DEMO-001</b>
-          <span>Disponible</span>
-        </article>
-        <article>
-          <small>Contrat actif</small>
-          <b>CA-DEMO-001</b>
-          <span>Titulaire : Camille Rivière</span>
-        </article>
-        <article>
-          <small>Compteur courant</small>
-          <b>SEA-2026-0001</b>
-          <span>Posé</span>
-        </article>
-      </div>
-      <h3>Historique du dossier</h3>
-      <div className="frise">
-        <p>
-          <time>7 août · 09:42</time>
-          <b>Compteur posé</b>
-          <span>Agent exploitation</span>
-        </p>
-        <p>
-          <time>7 août · 09:37</time>
-          <b>Contrat activé</b>
-          <span>Agent relation usagers</span>
-        </p>
-        <p>
-          <time>7 août · 09:31</time>
-          <b>Point de consommation ouvert</b>
-          <span>Agent relation usagers</span>
-        </p>
-        <p>
-          <time>7 août · 09:22</time>
-          <b>Rattachement créé</b>
-          <span>Agent relation usagers</span>
-        </p>
-      </div>
+      <h2>Synthèse du dossier</h2>
+      <label>
+        Point de consommation
+        <select value={point} onChange={(e) => setPoint(e.target.value)}>
+          <option value="">Sélectionner un Point</option>
+          {points.map((p) => (
+            <option key={String(p.id)} value={String(p.id)}>
+              {String(p.reference)} · {String(p.statut)}
+            </option>
+          ))}
+        </select>
+      </label>
+      {dossier && (
+        <>
+          <h2>{String(resume('point_consommation')?.reference)}</h2>
+          <div className="relations">
+            <article>
+              <small>Point de desserte</small>
+              <b>{String(resume('point_desserte_courant')?.reference ?? 'Non rattaché')}</b>
+              <span>{String(resume('point_desserte_courant')?.statut ?? '')}</span>
+            </article>
+            <article>
+              <small>Contrat actif</small>
+              <b>{String(resume('contrat_actif')?.reference ?? 'Aucun')}</b>
+              <span>{String(resume('titulaire_principal')?.libelle ?? '')}</span>
+            </article>
+            <article>
+              <small>Compteur courant</small>
+              <b>{String(resume('compteur_actif')?.reference ?? 'Aucun')}</b>
+              <span>{String(resume('compteur_actif')?.statut ?? '')}</span>
+            </article>
+          </div>
+          <h3>Historique du dossier</h3>
+          <div className="frise">
+            {activite.map((a) => (
+              <p key={String(a.correlation)}>
+                <time>{new Date(String(a.date_metier)).toLocaleString('fr-FR')}</time>
+                <b>{String(a.libelle)}</b>
+                <span>{String(a.reference_agregat ?? '')}</span>
+              </p>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }
