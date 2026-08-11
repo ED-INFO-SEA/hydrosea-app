@@ -2,8 +2,12 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { PreferencesFacturationContrat } from './PreferencesFacturationContrat';
+import type { PreferencesReglementContrat } from './PreferencesReglementContrat';
 export type ModifierContratAbonnement = {
-    date_effet?: string;
-    date_fin?: string;
+    date_fin_prevue?: string;
+    preferences_facturation?: PreferencesFacturationContrat;
+    preferences_reglement?: PreferencesReglementContrat;
+    motif_modification?: string;
 };
 

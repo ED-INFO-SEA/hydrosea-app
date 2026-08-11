@@ -6,6 +6,18 @@ on:
 permissions:
   contents: read
 jobs:
+  lanceur-windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Contrôler le lanceur PowerShell
+        shell: pwsh
+        run: |
+          ./scripts/demo.ps1 -SelfTest
+          ./tests/controle-demo-windows.ps1
+      - name: Limite du runner Windows
+        shell: pwsh
+        run: Write-Host "Le parcours Docker Linux complet est exécuté par preview-e2e ; Docker Desktop n’est pas disponible sur ce runner Windows."
   contrats-et-frontend:
     runs-on: ubuntu-24.04
     steps:
@@ -21,8 +33,9 @@ jobs:
       - name: Refuser les fichiers générés obsolètes
         run: |
           sha256sum -c api/SHA256SUMS
-          test "$(cat api/VERSION)" = "307a7dd6a43e44bf7b2f52f8bc9fef3feb244a8b"
+          test "$(cat api/VERSION)" = "bdc49b2c1c641f1504fe8104275cf2a914692464"
           git diff --exit-code -- api/openapi.bundle.yaml frontend/src/api/genere
+          node tests/controle-preview.mjs
       - name: Analyser et tester le frontend
         working-directory: frontend
         run: |
@@ -63,3 +76,65 @@ jobs:
       - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         if: failure()
         with: {name: journaux-integration, path: journaux-conteneurs.log, if-no-files-found: ignore}
+  preview-e2e:
+    runs-on: ubuntu-24.04
+    needs: [backend, contrats-et-frontend]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with: {distribution: temurin, java-version: '21', cache: maven}
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
+        with: {node-version: '22.18.0', cache: npm, cache-dependency-path: frontend/package-lock.json}
+      - name: Préparer PostgreSQL, RabbitMQ, MinIO et Keycloak
+        run: |
+          docker run -d --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=hydrosea -p 5432:5432 postgis/postgis:16-3.5
+          docker run -d --name rabbitmq -p 5672:5672 rabbitmq:4.1.2-management-alpine
+          docker run -d --name minio -e MINIO_ROOT_USER=hydrosea -e MINIO_ROOT_PASSWORD=hydrosea-secret -p 9000:9000 quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          docker run -d --name keycloak -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin -p 8081:8080 quay.io/keycloak/keycloak:26.2.5 start-dev
+          timeout 120 sh -c 'until curl -fsS http://localhost:8081/realms/master >/dev/null; do sleep 2; done'
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create realms -s realm=hydrosea -s enabled=true
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create clients -r hydrosea -s clientId=hydrosea-web -s publicClient=true -s directAccessGrantsEnabled=true -s 'redirectUris=["http://127.0.0.1:5173/*"]' -s 'webOrigins=["http://127.0.0.1:5173"]'
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create users -r hydrosea -s username=administrateur-demo -s enabled=true -s email=demo@hydrosea.local -s emailVerified=true -s firstName=Administrateur -s lastName=Démonstration
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh set-password -r hydrosea --username administrateur-demo --new-password demonstration
+          for portee in tiers:lecture tiers:ecriture points:lecture points:ecriture contrats:lecture contrats:ecriture comptage:lecture comptage:ecriture; do
+            docker exec keycloak /opt/keycloak/bin/kcadm.sh create client-scopes -r hydrosea -s name="$portee" -s protocol=openid-connect
+            identifiant=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get client-scopes -r hydrosea --fields id,name | jq -r ".[]|select(.name==\"$portee\")|.id")
+            client=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get clients -r hydrosea -q clientId=hydrosea-web --fields id | jq -r '.[0].id')
+            docker exec keycloak /opt/keycloak/bin/kcadm.sh update "clients/$client/default-client-scopes/$identifiant" -r hydrosea
+          done
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create client-scopes -r hydrosea -s name=hydrosea-audience -s protocol=openid-connect
+          audience=$(docker exec keycloak /opt/keycloak/bin/kcadm.sh get client-scopes -r hydrosea --fields id,name | jq -r '.[]|select(.name=="hydrosea-audience")|.id')
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh create "client-scopes/$audience/protocol-mappers/models" -r hydrosea -s name=hydrosea-api -s protocol=openid-connect -s protocolMapper=oidc-audience-mapper -s 'config."included.custom.audience"=hydrosea-api' -s 'config."access.token.claim"=true'
+          docker exec keycloak /opt/keycloak/bin/kcadm.sh update "clients/$client/default-client-scopes/$audience" -r hydrosea
+      - name: Démarrer le backend et le frontend
+        env:
+          POSTGRES_URL: jdbc:postgresql://localhost:5432/hydrosea
+          POSTGRES_APP_USER: postgres
+          POSTGRES_APP_PASSWORD: postgres
+          POSTGRES_MIGRATION_USER: postgres
+          POSTGRES_MIGRATION_PASSWORD: postgres
+          KEYCLOAK_ISSUER: http://localhost:8081/realms/hydrosea
+          KEYCLOAK_JWK_SET_URI: http://localhost:8081/realms/hydrosea/protocol/openid-connect/certs
+          KEYCLOAK_AUDIENCE: hydrosea-api
+          RABBITMQ_USER: guest
+          RABBITMQ_PASSWORD: guest
+          MINIO_ACCESS_KEY: hydrosea
+          MINIO_SECRET_KEY: hydrosea-secret
+        run: |
+          cd backend && mvn -B spring-boot:run > ../backend-e2e.log 2>&1 &
+          cd frontend && npm ci && VITE_KEYCLOAK_URL=http://localhost:8081 npm run dev -- --host 127.0.0.1 > ../frontend-e2e.log 2>&1 &
+          timeout 180 sh -c 'until curl -sS http://localhost:8080/actuator/health >/dev/null && curl -fsS http://127.0.0.1:5173 >/dev/null; do sleep 3; done'
+      - name: Initialiser les données fictives de la Preview
+        env:
+          POSTGRES_DEMO_URL: postgresql://postgres:postgres@localhost:5432/hydrosea
+        run: sh scripts/initialiser-demo.sh
+      - name: Exécuter preview-0.1.spec.ts
+        working-directory: frontend
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        if: always()
+        with: {name: captures-preview-0.1, path: frontend/captures-playwright, if-no-files-found: warn}
+      - name: Publier les journaux en cas d’échec
+        if: failure()
+        run: docker logs keycloak > keycloak-e2e.log 2>&1 || true; tail -200 backend-e2e.log || true

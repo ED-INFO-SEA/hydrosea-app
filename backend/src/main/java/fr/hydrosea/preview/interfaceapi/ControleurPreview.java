@@ -1,0 +1,105 @@
+package fr.hydrosea.preview.interfaceapi;
+
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.ActiverContratRequete;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.AjouterParticipantContratRequete;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.CommandeAjouterParticipant;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.CommandeCreerContrat;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.CommandeModifierContrat;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.CreerContratAbonnementRequete;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.ModifierContratAbonnementRequete;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.PageContrats;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.ValiderContratRequete;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.VueContrat;
+import static fr.hydrosea.abonnements.application.ModelesAbonnements.VueParticipant;
+import static fr.hydrosea.comptage.application.ModelesComptage.CommandeCreerCompteur;
+import static fr.hydrosea.comptage.application.ModelesComptage.CommandeModifierCompteur;
+import static fr.hydrosea.comptage.application.ModelesComptage.CommandePoserCompteur;
+import static fr.hydrosea.comptage.application.ModelesComptage.CreerCompteurRequete;
+import static fr.hydrosea.comptage.application.ModelesComptage.ModifierCompteurRequete;
+import static fr.hydrosea.comptage.application.ModelesComptage.PageAffectations;
+import static fr.hydrosea.comptage.application.ModelesComptage.PageCompteurs;
+import static fr.hydrosea.comptage.application.ModelesComptage.PoserCompteurRequete;
+import static fr.hydrosea.comptage.application.ModelesComptage.VueAffectation;
+import static fr.hydrosea.comptage.application.ModelesComptage.VueCompteur;
+import static fr.hydrosea.desserte.application.ModelesDesserte.ChangerDisponibilitePointDesserteRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointConsommation;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CommandeCreerPointDesserte;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CommandeModifierPointConsommation;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CommandeRattacherPointConsommation;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CreerPointConsommationRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.CreerPointDesserteRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.ModifierPointConsommationRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.OuvrirPointConsommationRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.PagePointsConsommation;
+import static fr.hydrosea.desserte.application.ModelesDesserte.PagePointsDesserte;
+import static fr.hydrosea.desserte.application.ModelesDesserte.RattacherPointConsommationRequete;
+import static fr.hydrosea.desserte.application.ModelesDesserte.VuePointConsommation;
+import static fr.hydrosea.desserte.application.ModelesDesserte.VuePointDesserte;
+import fr.hydrosea.abonnements.application.ServiceAbonnements;
+import fr.hydrosea.commun.application.ServiceIdempotence;
+import fr.hydrosea.commun.interfaceapi.FiltreCorrelation;
+import fr.hydrosea.comptage.application.ServiceComptage;
+import fr.hydrosea.desserte.application.ServiceDesserte;
+import fr.hydrosea.preview.application.ServiceLecturePreview;
+import fr.hydrosea.preview.application.ServiceLecturePreview.Activite;
+import fr.hydrosea.preview.application.ServiceLecturePreview.Adresse;
+import fr.hydrosea.preview.application.ServiceLecturePreview.Indicateurs;
+import fr.hydrosea.preview.application.ServiceLecturePreview.SyntheseDossier;
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Supplier;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController @RequestMapping("/v1")
+public class ControleurPreview {
+ private final ServiceDesserte desserte; private final ServiceAbonnements abonnements; private final ServiceComptage comptage; private final ServiceLecturePreview lecture; private final ServiceIdempotence idempotence;
+ public ControleurPreview(ServiceDesserte desserte,ServiceAbonnements abonnements,ServiceComptage comptage,ServiceLecturePreview lecture,ServiceIdempotence idempotence){this.desserte=desserte;this.abonnements=abonnements;this.comptage=comptage;this.lecture=lecture;this.idempotence=idempotence;}
+ @OperationPreview("rechercher_points_desserte") @GetMapping("/points-desserte") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public PagePointsDesserte dessertes(){var l=desserte.listerDessertes();return new PagePointsDesserte(l,0,100,l.size());}
+ @OperationPreview("creer_point_desserte") @PostMapping("/points-desserte") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointDesserte> creerDesserte(@RequestHeader("Idempotency-Key")String cle,@RequestBody CreerPointDesserteRequete r,Authentication a){UUID c=FiltreCorrelation.courante();return idem(a,cle,"creer_point_desserte","/v1/points-desserte",r,VuePointDesserte.class,()->cree(desserte.creer(new CommandeCreerPointDesserte(r.identifiantCommune(),r.identifiantAdresse()),c),"/v1/points-desserte/",c)).enReponseHttp();}
+ @OperationPreview("consulter_point_desserte") @GetMapping("/points-desserte/{id}") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public ResponseEntity<VuePointDesserte> desserte(@PathVariable UUID id){var v=desserte.consulterDesserte(id);return ResponseEntity.ok().eTag(etag(v.version())).body(v);}
+ @OperationPreview("rendre_disponible_point_desserte") @PostMapping("/points-desserte/{id}/rendre-disponible") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointDesserte> disponible(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestBody ChangerDisponibilitePointDesserteRequete r){var vue=desserte.rendreDisponible(id,version(v),FiltreCorrelation.courante());return ResponseEntity.ok().eTag(etag(vue.version())).body(vue);}
+ @OperationPreview("rechercher_points_consommation") @GetMapping("/points-consommation") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public PagePointsConsommation consommations(){var l=desserte.listerPoints();return new PagePointsConsommation(l,0,100,l.size());}
+ @OperationPreview("creer_point_consommation") @PostMapping("/points-consommation") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointConsommation> creerPoint(@RequestHeader("Idempotency-Key")String cle,@RequestBody CreerPointConsommationRequete r,Authentication a){UUID c=FiltreCorrelation.courante();return idem(a,cle,"creer_point_consommation","/v1/points-consommation",r,VuePointConsommation.class,()->cree(desserte.creer(new CommandeCreerPointConsommation(r.usage(),r.identifiantAdresse(),r.identifiantPointDesserte()),c),"/v1/points-consommation/",c)).enReponseHttp();}
+ @OperationPreview("consulter_point_consommation") @GetMapping("/points-consommation/{id}") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public ResponseEntity<VuePointConsommation> consommation(@PathVariable UUID id){var v=desserte.consulterPoint(id);return ResponseEntity.ok().eTag(etag(v.version())).body(v);}
+ @OperationPreview("modifier_point_consommation") @PatchMapping("/points-consommation/{id}") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointConsommation> modifierPoint(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestBody ModifierPointConsommationRequete r){var vue=desserte.modifier(id,version(v),new CommandeModifierPointConsommation(r.usage()),FiltreCorrelation.courante());return ResponseEntity.ok().eTag(etag(vue.version())).body(vue);}
+ @OperationPreview("rattacher_point_consommation_desserte") @PostMapping("/points-consommation/{id}/rattachements-desserte") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointConsommation> rattacher(@PathVariable UUID id,@RequestHeader("Idempotency-Key")String cle,@RequestBody RattacherPointConsommationRequete r,Authentication a){UUID c=FiltreCorrelation.courante(),u=id;String uri="/v1/points-consommation/"+id+"/rattachements-desserte";return idem(a,cle,"rattacher_point_consommation_desserte",uri,r,VuePointConsommation.class,()->cree(desserte.rattacher(u,new CommandeRattacherPointConsommation(r.identifiantPointDesserte(),r.dateDebutValidite()),c),"/v1/points-consommation/",c)).enReponseHttp();}
+ @OperationPreview("ouvrir_point_consommation") @PostMapping("/points-consommation/{id}/ouvrir") @PreAuthorize("hasAuthority('SCOPE_points:ecriture')") public ResponseEntity<VuePointConsommation> ouvrir(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestHeader("Idempotency-Key")String cle,@RequestBody OuvrirPointConsommationRequete r,Authentication a){UUID c=FiltreCorrelation.courante();String uri="/v1/points-consommation/"+id+"/ouvrir";return idem(a,cle,"ouvrir_point_consommation",uri,r,VuePointConsommation.class,()->ok(desserte.ouvrir(id,version(v),c),c)).enReponseHttp();}
+ @OperationPreview("rechercher_contrats_abonnement") @GetMapping("/contrats-abonnement") @PreAuthorize("hasAuthority('SCOPE_contrats:lecture')") public PageContrats contrats(){var l=abonnements.lister();return new PageContrats(l,0,100,l.size());}
+ @OperationPreview("creer_contrat_abonnement") @PostMapping("/contrats-abonnement") @PreAuthorize("hasAuthority('SCOPE_contrats:ecriture')") public ResponseEntity<VueContrat> creerContrat(@RequestHeader("Idempotency-Key")String cle,@RequestBody CreerContratAbonnementRequete r,Authentication a){UUID c=FiltreCorrelation.courante();return idem(a,cle,"creer_contrat_abonnement","/v1/contrats-abonnement",r,VueContrat.class,()->cree(abonnements.creer(new CommandeCreerContrat(r.identifiantPointConsommation(),r.natureAbonnement(),r.dateDemande(),r.dateEffetSouhaitee()),c),"/v1/contrats-abonnement/",c)).enReponseHttp();}
+ @OperationPreview("consulter_contrat_abonnement") @GetMapping("/contrats-abonnement/{id}") @PreAuthorize("hasAuthority('SCOPE_contrats:lecture')") public ResponseEntity<VueContrat> contrat(@PathVariable UUID id){var v=abonnements.consulter(id);return ResponseEntity.ok().eTag(etag(v.version())).body(v);}
+ @OperationPreview("modifier_contrat_abonnement") @PatchMapping("/contrats-abonnement/{id}") @PreAuthorize("hasAuthority('SCOPE_contrats:ecriture')") public ResponseEntity<VueContrat> modifierContrat(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestBody ModifierContratAbonnementRequete r){var vue=abonnements.modifier(id,version(v),new CommandeModifierContrat(r.natureAbonnement()),FiltreCorrelation.courante());return ResponseEntity.ok().eTag(etag(vue.version())).body(vue);}
+ @OperationPreview("ajouter_participant_contrat") @PostMapping("/contrats-abonnement/{id}/participants") @PreAuthorize("hasAuthority('SCOPE_contrats:ecriture')") public ResponseEntity<VueParticipant> participant(@PathVariable UUID id,@RequestHeader("Idempotency-Key")String cle,@RequestBody AjouterParticipantContratRequete r,Authentication a){UUID c=FiltreCorrelation.courante();String uri="/v1/contrats-abonnement/"+id+"/participants";return idem(a,cle,"ajouter_participant_contrat",uri,r,VueParticipant.class,()->cree(abonnements.ajouterParticipant(id,new CommandeAjouterParticipant(r.identifiantTiers(),r.roleContractuel(),!Boolean.FALSE.equals(r.responsabiliteFinanciere()),r.dateDebutValidite()),c),uri+"/",c)).enReponseHttp();}
+ @OperationPreview("valider_contrat_abonnement") @PostMapping("/contrats-abonnement/{id}/valider") @PreAuthorize("hasAuthority('SCOPE_contrats:ecriture')") public ResponseEntity<VueContrat> valider(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestHeader("Idempotency-Key")String cle,@RequestBody ValiderContratRequete r,Authentication a){UUID c=FiltreCorrelation.courante();String uri="/v1/contrats-abonnement/"+id+"/valider";return idem(a,cle,"valider_contrat_abonnement",uri,r,VueContrat.class,()->ok(abonnements.valider(id,version(v),c),c)).enReponseHttp();}
+ @OperationPreview("activer_contrat_abonnement") @PostMapping("/contrats-abonnement/{id}/activer") @PreAuthorize("hasAuthority('SCOPE_contrats:ecriture')") public ResponseEntity<VueContrat> activer(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestHeader("Idempotency-Key")String cle,@RequestBody ActiverContratRequete r,Authentication a){UUID c=FiltreCorrelation.courante();String uri="/v1/contrats-abonnement/"+id+"/activer";return idem(a,cle,"activer_contrat_abonnement",uri,r,VueContrat.class,()->ok(abonnements.activer(id,version(v),c),c)).enReponseHttp();}
+ @OperationPreview("rechercher_compteurs") @GetMapping("/compteurs") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public PageCompteurs compteurs(){var l=comptage.lister();return new PageCompteurs(l,0,100,l.size());}
+ @OperationPreview("enregistrer_compteur") @PostMapping("/compteurs") @PreAuthorize("hasAuthority('SCOPE_comptage:ecriture')") public ResponseEntity<VueCompteur> compteur(@RequestHeader("Idempotency-Key")String cle,@RequestBody CreerCompteurRequete r,Authentication a){UUID c=FiltreCorrelation.courante();return idem(a,cle,"enregistrer_compteur","/v1/compteurs",r,VueCompteur.class,()->cree(comptage.creer(new CommandeCreerCompteur(r.numeroSerie(),r.fabricant(),r.modele(),r.calibre()),c),"/v1/compteurs/",c)).enReponseHttp();}
+ @OperationPreview("consulter_compteur") @GetMapping("/compteurs/{id}") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public ResponseEntity<VueCompteur> compteur(@PathVariable UUID id){var v=comptage.consulter(id);return ResponseEntity.ok().eTag(etag(v.version())).body(v);}
+ @OperationPreview("modifier_compteur") @PatchMapping("/compteurs/{id}") @PreAuthorize("hasAuthority('SCOPE_comptage:ecriture')") public ResponseEntity<VueCompteur> modifierCompteur(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestBody ModifierCompteurRequete r){var vue=comptage.modifier(id,version(v),new CommandeModifierCompteur(r.fabricant(),r.modele(),r.calibre()),FiltreCorrelation.courante());return ResponseEntity.ok().eTag(etag(vue.version())).body(vue);}
+ @OperationPreview("poser_compteur") @PostMapping("/compteurs/{id}/poser") @PreAuthorize("hasAuthority('SCOPE_comptage:ecriture')") public ResponseEntity<VueAffectation> poser(@PathVariable UUID id,@RequestHeader(HttpHeaders.IF_MATCH)String v,@RequestHeader("Idempotency-Key")String cle,@RequestBody PoserCompteurRequete r,Authentication a){UUID c=FiltreCorrelation.courante();String uri="/v1/compteurs/"+id+"/poser";return idem(a,cle,"poser_compteur",uri,r,VueAffectation.class,()->cree(comptage.poser(id,version(v),new CommandePoserCompteur(r.identifiantPointConsommation(),r.datePose(),r.indexPose(),r.referenceIntervention()),c),"/v1/affectations-compteur/",c)).enReponseHttp();}
+ @OperationPreview("rechercher_affectations_compteur") @GetMapping("/affectations-compteur") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public PageAffectations affectations(){var l=comptage.listerAffectations();return new PageAffectations(l,0,100,l.size());}
+ @OperationPreview("consulter_affectation_compteur") @GetMapping("/affectations-compteur/{id}") @PreAuthorize("hasAuthority('SCOPE_comptage:lecture')") public VueAffectation affectation(@PathVariable UUID id){return comptage.consulterAffectation(id);}
+ @GetMapping("/preview/dossiers/{id}/activite") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public List<Activite> activite(@PathVariable UUID id){return lecture.activite(id);}
+ @GetMapping("/preview/indicateurs") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public Indicateurs indicateurs(){return lecture.indicateurs();}
+ @GetMapping("/preview/adresses") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public List<Adresse> adresses(){return lecture.adresses();}
+ @GetMapping("/preview/dossiers/{id}") @PreAuthorize("hasAuthority('SCOPE_points:lecture')") public SyntheseDossier synthese(@PathVariable UUID id){return lecture.synthese(id);}
+ private <T> ServiceIdempotence.Resultat<T> idem(Authentication a,String cle,String operation,String uri,Object requete,Class<T> type,Supplier<ResponseEntity<T>> action){return idempotence.executer(a.getName(),cle,operation,uri,requete,type,action);}
+ private static <T> ResponseEntity<T> cree(T objet,String base,UUID correlation){UUID id=identifiant(objet);return ResponseEntity.status(HttpStatus.CREATED).location(URI.create(base+id)).eTag(etag(versionObjet(objet))).header(FiltreCorrelation.ENTETE,correlation.toString()).body(objet);}
+ private static <T> ResponseEntity<T> ok(T objet,UUID correlation){return ResponseEntity.ok().eTag(etag(versionObjet(objet))).header(FiltreCorrelation.ENTETE,correlation.toString()).body(objet);}
+ private static UUID identifiant(Object o){if(o instanceof VuePointDesserte v)return v.id();if(o instanceof VuePointConsommation v)return v.id();if(o instanceof VueContrat v)return v.id();if(o instanceof VueParticipant v)return v.id();if(o instanceof VueCompteur v)return v.id();if(o instanceof VueAffectation v)return v.id();throw new IllegalArgumentException("Objet sans identifiant.");}
+ private static int versionObjet(Object o){if(o instanceof VuePointDesserte v)return v.version();if(o instanceof VuePointConsommation v)return v.version();if(o instanceof VueContrat v)return v.version();if(o instanceof VueCompteur v)return v.version();return 1;}
+ private static int version(String v){if(v==null||!v.matches("\"[1-9][0-9]*\""))throw new IllegalArgumentException("If-Match doit contenir une version entre guillemets.");return Integer.parseInt(v.substring(1,v.length()-1));}
+ private static String etag(int v){return "\""+v+"\"";}
+}

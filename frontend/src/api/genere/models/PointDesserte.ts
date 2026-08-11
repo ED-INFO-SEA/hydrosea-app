@@ -9,7 +9,7 @@ import type { IdentiteVersionnee } from './IdentiteVersionnee';
 export type PointDesserte = (IdentiteVersionnee & {
     readonly identifiant_point_desserte: string;
     reference: string;
-    identifiant_sig: string;
+    identifiant_sig?: string;
     statut: string;
     readonly version_sig?: string;
     readonly date_synchronisation?: string;

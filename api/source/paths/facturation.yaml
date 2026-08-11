@@ -5,6 +5,11 @@ x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/Idempotenc
 factures:
   get:
     operationId: rechercher_factures
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des factures
     description: Recherche paginée par contrat, statut, référence et période.
     tags: [Facturation]
@@ -18,6 +23,11 @@ factures:
 calculer:
   post:
     operationId: calculer_factures
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Calculer des brouillons de facture
     description: Commande le calcul sans définir la tarification dans OpenAPI.
     tags: [Facturation]
@@ -33,6 +43,11 @@ facture:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   get:
     operationId: consulter_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter une facture
     description: Retourne la pièce et ses montants sans document binaire.
     tags: [Facturation]
@@ -46,6 +61,11 @@ emettre:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   post:
     operationId: emettre_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Émettre une facture
     description: Fige et émet un brouillon validé ; la diffusion documentaire reste à arbitrer.
     tags: [Facturation]
@@ -60,6 +80,11 @@ corriger:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   post:
     operationId: corriger_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Corriger une facture
     description: Crée une pièce de correction ou un avoir lié ; le lettrage définitif reste à arbitrer.
     tags: [Facturation]
@@ -75,6 +100,11 @@ annuler:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   post:
     operationId: annuler_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Annuler une facture
     description: Annule la pièce selon son état et conserve l’historique.
     tags: [Facturation]
@@ -90,6 +120,11 @@ lignes:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   get:
     operationId: consulter_lignes_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter les lignes d’une facture
     description: Retourne le détail figé de la pièce.
     tags: [Facturation]
@@ -103,6 +138,11 @@ releves_facture:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantFacture'}]
   get:
     operationId: consulter_releves_facture
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter les relèves d’une facture
     description: Retourne les mesures figées utilisées comme preuves de calcul.
     tags: [Facturation]

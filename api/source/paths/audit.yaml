@@ -2,6 +2,11 @@ x-erreur: &erreur {'400': {$ref: '../openapi.yaml#/components/responses/RequeteI
 evenements:
   get:
     operationId: rechercher_evenements_metier
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des événements métier
     description: Lecture contrôlée et minimisée ; aucune charge complète ni opération d’écriture n’est exposée.
     tags: [Audit]

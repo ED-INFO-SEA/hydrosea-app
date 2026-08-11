@@ -5,15 +5,21 @@
 import type { AffectationCompteur } from '../models/AffectationCompteur';
 import type { BilanImportReleves } from '../models/BilanImportReleves';
 import type { Compteur } from '../models/Compteur';
+import type { CorrigerAffectationCompteur } from '../models/CorrigerAffectationCompteur';
 import type { CorrigerReleve } from '../models/CorrigerReleve';
-import type { CreerAffectationCompteur } from '../models/CreerAffectationCompteur';
 import type { CreerCompteur } from '../models/CreerCompteur';
 import type { CreerReleve } from '../models/CreerReleve';
+import type { DeposerCompteur } from '../models/DeposerCompteur';
+import type { MettreCompteurControle } from '../models/MettreCompteurControle';
 import type { ModifierCompteur } from '../models/ModifierCompteur';
 import type { PageAffectationsCompteur } from '../models/PageAffectationsCompteur';
 import type { PageCompteurs } from '../models/PageCompteurs';
 import type { PageReleves } from '../models/PageReleves';
+import type { PoserCompteur } from '../models/PoserCompteur';
+import type { ReformerCompteur } from '../models/ReformerCompteur';
 import type { Releve } from '../models/Releve';
+import type { RemettreCompteurDisponible } from '../models/RemettreCompteurDisponible';
+import type { RemplacerCompteur } from '../models/RemplacerCompteur';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -158,7 +164,7 @@ export class ComptageService {
     }
     /**
      * Poser un compteur
-     * Crée ou active l’affectation au Point de consommation.
+     * Pose atomiquement un Compteur disponible sur un Point de consommation, crée la période d’Affectation et conserve l’index de pose. Cette opération prospective ne crée ni n’active aucun Contrat et ne modifie aucune géométrie SIG.
      * @returns AffectationCompteur Affectation créée
      * @throws ApiError
      */
@@ -175,7 +181,7 @@ export class ComptageService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: CreerAffectationCompteur,
+        requestBody: PoserCompteur,
         xCorrelationId?: string,
     }): CancelablePromise<AffectationCompteur> {
         return __request(OpenAPI, {
@@ -204,7 +210,7 @@ export class ComptageService {
     }
     /**
      * Déposer un compteur
-     * Clôture l’affectation active avec l’index de dépose.
+     * Clôt atomiquement l’Affectation active avec l’index de dépose ou une justification qualifiée et place le Compteur dans son état de devenir. Cette opération prospective ne ferme pas le Point, ne résilie aucun Contrat et ne supprime aucune Relève.
      * @returns AffectationCompteur Affectation clôturée
      * @throws ApiError
      */
@@ -221,11 +227,7 @@ export class ComptageService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            date_depose: string;
-            index_depose: number;
-            motif?: string;
-        },
+        requestBody: DeposerCompteur,
         xCorrelationId?: string,
     }): CancelablePromise<AffectationCompteur> {
         return __request(OpenAPI, {
@@ -254,7 +256,7 @@ export class ComptageService {
     }
     /**
      * Remplacer un compteur
-     * Lie la dépose et la pose ; l’ordre temporel définitif reste documenté dans les arbitrages de données.
+     * Remplace atomiquement le Compteur sortant par un Compteur entrant disponible au même instant T, clôt l’ancienne Affectation et crée la nouvelle avec leurs index. Cette opération prospective ne modifie ni Contrat, ni titulaire, ni dette, ni Point de desserte.
      * @returns AffectationCompteur Remplacement enregistré
      * @throws ApiError
      */
@@ -271,12 +273,7 @@ export class ComptageService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            identifiant_nouveau_compteur: string;
-            date_remplacement: string;
-            index_depose: number;
-            index_pose: number;
-        },
+        requestBody: RemplacerCompteur,
         xCorrelationId?: string,
     }): CancelablePromise<AffectationCompteur> {
         return __request(OpenAPI, {
@@ -305,7 +302,7 @@ export class ComptageService {
     }
     /**
      * Réformer un compteur
-     * Retire définitivement le compteur du parc utilisable selon RM-CPT.
+     * Réforme définitivement un Compteur déposé et sans Affectation active, tout en conservant son identité, ses Affectations et ses Relèves historiques. Cette opération prospective ne supprime aucune donnée.
      * @returns Compteur Compteur réformé
      * @throws ApiError
      */
@@ -313,6 +310,7 @@ export class ComptageService {
         identifiantCompteur,
         idempotencyKey,
         ifMatch,
+        requestBody,
         xCorrelationId,
     }: {
         identifiantCompteur: string,
@@ -321,6 +319,7 @@ export class ComptageService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
+        requestBody: ReformerCompteur,
         xCorrelationId?: string,
     }): CancelablePromise<Compteur> {
         return __request(OpenAPI, {
@@ -334,6 +333,100 @@ export class ComptageService {
                 'If-Match': ifMatch,
                 'X-Correlation-Id': xCorrelationId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Requête invalide.`,
+                401: `Authentification requise.`,
+                403: `Droit insuffisant.`,
+                404: `Ressource absente.`,
+                409: `Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.`,
+                412: `Version If-Match non satisfaite.`,
+                500: `Erreur interne sans information sensible.`,
+            },
+        });
+    }
+    /**
+     * Mettre un Compteur en contrôle
+     * Place un Compteur disponible ou déposé en contrôle métrologique après vérification de l’absence d’Affectation active. Cette opération prospective ne crée aucune Affectation et ne modifie ni Point ni Contrat.
+     * @returns Compteur Compteur en contrôle
+     * @throws ApiError
+     */
+    public static mettreCompteurControle({
+        identifiantCompteur,
+        idempotencyKey,
+        ifMatch,
+        requestBody,
+        xCorrelationId,
+    }: {
+        identifiantCompteur: string,
+        idempotencyKey: string,
+        /**
+         * Version attendue de la ressource.
+         */
+        ifMatch: string,
+        requestBody: MettreCompteurControle,
+        xCorrelationId?: string,
+    }): CancelablePromise<Compteur> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/v1/compteurs/{identifiant_compteur}/mettre-en-controle',
+            path: {
+                'identifiant_compteur': identifiantCompteur,
+            },
+            headers: {
+                'Idempotency-Key': idempotencyKey,
+                'If-Match': ifMatch,
+                'X-Correlation-Id': xCorrelationId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Requête invalide.`,
+                401: `Authentification requise.`,
+                403: `Droit insuffisant.`,
+                404: `Ressource absente.`,
+                409: `Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.`,
+                412: `Version If-Match non satisfaite.`,
+                500: `Erreur interne sans information sensible.`,
+            },
+        });
+    }
+    /**
+     * Remettre un Compteur disponible
+     * Clôt un contrôle favorable et rend disponible un Compteur sans Affectation active, en conservant le résultat et sa référence. Cette opération prospective ne pose pas le Compteur.
+     * @returns Compteur Compteur disponible
+     * @throws ApiError
+     */
+    public static remettreCompteurDisponible({
+        identifiantCompteur,
+        idempotencyKey,
+        ifMatch,
+        requestBody,
+        xCorrelationId,
+    }: {
+        identifiantCompteur: string,
+        idempotencyKey: string,
+        /**
+         * Version attendue de la ressource.
+         */
+        ifMatch: string,
+        requestBody: RemettreCompteurDisponible,
+        xCorrelationId?: string,
+    }): CancelablePromise<Compteur> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/v1/compteurs/{identifiant_compteur}/remettre-disponible',
+            path: {
+                'identifiant_compteur': identifiantCompteur,
+            },
+            headers: {
+                'Idempotency-Key': idempotencyKey,
+                'If-Match': ifMatch,
+                'X-Correlation-Id': xCorrelationId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,
@@ -381,39 +474,6 @@ export class ComptageService {
         });
     }
     /**
-     * Créer une affectation de compteur
-     * Prépare une affectation sans contourner le Service métier de pose.
-     * @returns AffectationCompteur Affectation préparée
-     * @throws ApiError
-     */
-    public static creerAffectationCompteur({
-        idempotencyKey,
-        requestBody,
-        xCorrelationId,
-    }: {
-        idempotencyKey: string,
-        requestBody: CreerAffectationCompteur,
-        xCorrelationId?: string,
-    }): CancelablePromise<AffectationCompteur> {
-        return __request(OpenAPI, {
-            method: 'POST',
-            url: '/v1/affectations-compteur',
-            headers: {
-                'Idempotency-Key': idempotencyKey,
-                'X-Correlation-Id': xCorrelationId,
-            },
-            body: requestBody,
-            mediaType: 'application/json',
-            errors: {
-                400: `Requête invalide.`,
-                401: `Authentification requise.`,
-                403: `Droit insuffisant.`,
-                409: `Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.`,
-                500: `Erreur interne sans information sensible.`,
-            },
-        });
-    }
-    /**
      * Consulter une affectation de compteur
      * Retourne une période d’affectation et ses index figés.
      * @returns AffectationCompteur Affectation trouvée
@@ -441,15 +501,16 @@ export class ComptageService {
         });
     }
     /**
-     * Clôturer une affectation de compteur
-     * Clôture la période sans suppression physique.
-     * @returns AffectationCompteur Affectation clôturée
+     * Corriger une Affectation de compteur
+     * Crée une rectification historisée d’une borne, d’un index, d’une qualité ou d’une référence d’intervention sans écraser les valeurs d’origine. Cette opération administrative prospective ne pose, ne dépose et ne remplace aucun Compteur.
+     * @returns AffectationCompteur Rectification enregistrée
      * @throws ApiError
      */
-    public static cloturerAffectationCompteur({
+    public static corrigerAffectationCompteur({
         identifiantAffectation,
         idempotencyKey,
         ifMatch,
+        requestBody,
         xCorrelationId,
     }: {
         identifiantAffectation: string,
@@ -458,11 +519,12 @@ export class ComptageService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
+        requestBody: CorrigerAffectationCompteur,
         xCorrelationId?: string,
     }): CancelablePromise<AffectationCompteur> {
         return __request(OpenAPI, {
-            method: 'POST',
-            url: '/v1/affectations-compteur/{identifiant_affectation}/cloturer',
+            method: 'PATCH',
+            url: '/v1/affectations-compteur/{identifiant_affectation}',
             path: {
                 'identifiant_affectation': identifiantAffectation,
             },
@@ -471,6 +533,8 @@ export class ComptageService {
                 'If-Match': ifMatch,
                 'X-Correlation-Id': xCorrelationId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,

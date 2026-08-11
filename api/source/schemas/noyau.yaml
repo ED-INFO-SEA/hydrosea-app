@@ -69,12 +69,16 @@ components:
           properties:
             identifiant_contrat: {type: string, format: uuid, readOnly: true}
             reference: {type: string, example: CTR-2026-000128, readOnly: true}
-            statut: {type: string, example: BROUILLON, readOnly: true}
+            statut: {type: string, enum: [BROUILLON, A_VALIDER, VALIDE, ACTIF, SUSPENDU, RESILIE, ANNULE], readOnly: true}
+            nature_abonnement: {type: string}
+            date_demande: {type: string, format: date-time}
             date_effet: {type: string, format: date-time}
             date_fin: {type: string, format: date-time}
             date_resiliation: {type: string, format: date-time}
             identifiant_point_consommation_courant: {type: string, format: uuid, readOnly: true, description: Projection de la liaison temporelle abo.liaison_contrat_consommation à l’instant courant.}
             participants: {type: array, items: {$ref: '#/components/schemas/ParticipationContrat'}}
+            preferences_facturation: {$ref: '#/components/schemas/PreferencesFacturationContrat'}
+            preferences_reglement: {$ref: '#/components/schemas/PreferencesReglementContrat'}
     ParticipationContrat:
       allOf:
         - $ref: '#/components/schemas/IdentiteVersionnee'
@@ -83,17 +87,18 @@ components:
           properties:
             identifiant_participation: {type: string, format: uuid, readOnly: true}
             identifiant_tiers: {type: string, format: uuid}
-            role_contractuel: {type: string, example: TITULAIRE}
+            role_contractuel: {type: string, enum: [TITULAIRE_PRINCIPAL, SOLIDAIRE]}
             principal: {type: boolean}
             responsabilite_financiere: {type: boolean}
             date_debut_validite: {type: string, format: date-time}
             date_fin_validite: {type: string, format: date-time}
             motif_fin: {type: string}
+            ordre_affichage: {type: integer, minimum: 1}
     PointDesserte:
       allOf:
         - $ref: '#/components/schemas/IdentiteVersionnee'
         - type: object
-          required: [identifiant_point_desserte, reference, identifiant_sig, statut]
+          required: [identifiant_point_desserte, reference, statut]
           properties:
             identifiant_point_desserte: {type: string, format: uuid, readOnly: true}
             reference: {type: string, example: PD-004201}
@@ -295,15 +300,117 @@ components:
       additionalProperties: false
       required: [categorie, personne_morale]
       properties: {categorie: {const: PERSONNE_MORALE}, personne_morale: {$ref: '#/components/schemas/PersonneMorale'}}
-    ModifierTiers: {type: object, additionalProperties: false, minProperties: 1, properties: {personne_physique: {$ref: '#/components/schemas/PersonnePhysique'}, personne_morale: {$ref: '#/components/schemas/PersonneMorale'}}}
-    CreerParticipationContrat: {type: object, additionalProperties: false, required: [identifiant_tiers, role_contractuel, principal, date_debut_validite], properties: {identifiant_tiers: {type: string, format: uuid}, role_contractuel: {type: string}, principal: {type: boolean}, responsabilite_financiere: {type: boolean}, date_debut_validite: {type: string, format: date-time}}}
-    CreerContratAbonnement: {type: object, additionalProperties: false, required: [date_effet, identifiant_point_consommation, participants], properties: {date_effet: {type: string, format: date-time}, date_fin: {type: string, format: date-time}, identifiant_point_consommation: {type: string, format: uuid}, participants: {type: array, minItems: 1, items: {$ref: '#/components/schemas/CreerParticipationContrat'}}}}
-    ModifierContratAbonnement: {type: object, additionalProperties: false, minProperties: 1, properties: {date_effet: {type: string, format: date-time}, date_fin: {type: string, format: date-time}}}
-    CreerPointConsommation: {type: object, additionalProperties: false, required: [usage, identifiant_point_desserte, date_debut_validite], properties: {usage: {type: string}, identifiant_adresse: {type: string, format: uuid}, identifiant_point_desserte: {type: string, format: uuid}, date_debut_validite: {type: string, format: date-time}}}
-    ModifierPointConsommation: {type: object, additionalProperties: false, minProperties: 1, properties: {usage: {type: string}, identifiant_adresse: {type: string, format: uuid}}}
-    CreerCompteur: {type: object, additionalProperties: false, required: [numero_serie], properties: {numero_serie: {type: string}, fabricant: {type: string}, modele: {type: string}, calibre: {type: string}}}
-    ModifierCompteur: {type: object, additionalProperties: false, minProperties: 1, properties: {fabricant: {type: string}, modele: {type: string}, calibre: {type: string}}}
-    CreerAffectationCompteur: {type: object, additionalProperties: false, required: [identifiant_compteur, identifiant_point_consommation, date_debut_validite], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_point_consommation: {type: string, format: uuid}, date_debut_validite: {type: string, format: date-time}, index_pose: {type: number, minimum: 0}}}
+    ModifierTiers:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [personne_physique]
+          properties: {personne_physique: {$ref: '#/components/schemas/PersonnePhysique'}}
+        - type: object
+          additionalProperties: false
+          required: [personne_morale]
+          properties: {personne_morale: {$ref: '#/components/schemas/PersonneMorale'}}
+      description: Une et une seule spécialisation complète est obligatoire. RM-TIE-003 contrôle sa compatibilité avec la catégorie existante.
+    CreerParticipationContrat:
+      description: Deux variantes exclusives. Les booléens redondants restent imposés pour expliciter les invariants jusqu’à arbitrage de leur suppression.
+      oneOf:
+        - title: Titulaire principal
+          type: object
+          additionalProperties: false
+          required: [identifiant_tiers, role_contractuel, principal, responsabilite_financiere, ordre_affichage, date_debut_validite, motif_debut]
+          properties:
+            identifiant_tiers: {type: string, format: uuid}
+            role_contractuel: {const: TITULAIRE_PRINCIPAL}
+            principal: {const: true}
+            responsabilite_financiere: {const: true}
+            ordre_affichage: {type: integer, minimum: 1}
+            date_debut_validite: {type: string, format: date-time}
+            motif_debut: {type: string, minLength: 1}
+        - title: Tiers solidaire
+          type: object
+          additionalProperties: false
+          required: [identifiant_tiers, role_contractuel, principal, responsabilite_financiere, ordre_affichage, date_debut_validite, motif_debut]
+          properties:
+            identifiant_tiers: {type: string, format: uuid}
+            role_contractuel: {const: SOLIDAIRE}
+            principal: {const: false}
+            responsabilite_financiere: {const: true}
+            ordre_affichage: {type: integer, minimum: 1}
+            date_debut_validite: {type: string, format: date-time}
+            motif_debut: {type: string, minLength: 1}
+    PreferencesFacturationContrat:
+      type: object
+      additionalProperties: false
+      description: Nomenclatures initiales révisables avant implémentation après arbitrage métier.
+      properties:
+        canal: {type: string, enum: [PAPIER, ELECTRONIQUE, PORTAIL]}
+        frequence: {type: string, enum: [SELON_CYCLE, MENSUELLE, TRIMESTRIELLE, SEMESTRIELLE, ANNUELLE]}
+        regroupement_souhaite: {type: boolean}
+    PreferencesReglementContrat:
+      type: object
+      additionalProperties: false
+      description: Nomenclature initiale révisable avant implémentation après arbitrage métier.
+      properties:
+        moyen_souhaite: {type: string, enum: [AUCUN, PRELEVEMENT, VIREMENT, CHEQUE, CARTE, ESPECES, PAYFIP]}
+        mensualisation_souhaitee: {type: boolean}
+    CreerContratAbonnement:
+      type: object
+      additionalProperties: false
+      required: [date_demande, date_effet_souhaitee, nature_abonnement, identifiant_point_consommation, participants]
+      properties:
+        date_demande: {type: string, format: date-time}
+        date_effet_souhaitee: {type: string, format: date-time}
+        date_fin_prevue: {type: string, format: date-time}
+        nature_abonnement: {type: string, minLength: 1}
+        identifiant_point_consommation: {type: string, format: uuid}
+        participants: {type: array, minItems: 1, items: {$ref: '#/components/schemas/CreerParticipationContrat'}}
+        preferences_facturation: {$ref: '#/components/schemas/PreferencesFacturationContrat'}
+        preferences_reglement: {$ref: '#/components/schemas/PreferencesReglementContrat'}
+        references_documents: {type: array, items: {type: string}}
+    ModifierContratAbonnement:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        date_fin_prevue: {type: string, format: date-time}
+        preferences_facturation: {$ref: '#/components/schemas/PreferencesFacturationContrat'}
+        preferences_reglement: {$ref: '#/components/schemas/PreferencesReglementContrat'}
+        motif_modification: {type: string, minLength: 1}
+    ModifierParticipationContrat: {type: object, additionalProperties: false, minProperties: 1, properties: {responsabilite_financiere: {type: boolean}, ordre_affichage: {type: integer, minimum: 1}, motif_modification: {type: string, minLength: 1}}}
+    ValiderContrat: {type: object, additionalProperties: false, required: [decision], properties: {decision: {type: string, enum: [VALIDER, RETOURNER_BROUILLON]}, motif_retour: {type: string}, references_documents: {type: array, items: {type: string}}}}
+    ActiverContrat: {type: object, additionalProperties: false, properties: {date_activation: {type: string, format: date-time}, activation_forcee: {type: boolean}, motif_forcage: {type: string}}}
+    SuspendreContrat: {type: object, additionalProperties: false, required: [code_motif, date_debut], properties: {code_motif: {type: string, minLength: 1}, date_debut: {type: string, format: date-time}, date_fin_prevue: {type: string, format: date-time}, reference_justificatif: {type: string}}}
+    ReactiverContrat: {type: object, additionalProperties: false, required: [code_motif, date_reactivation], properties: {code_motif: {type: string, minLength: 1}, date_reactivation: {type: string, format: date-time}, reference_justificatif: {type: string}}}
+    AnnulerContrat: {type: object, additionalProperties: false, required: [code_motif, date_annulation], properties: {code_motif: {type: string, minLength: 1}, date_annulation: {type: string, format: date-time}, identifiant_decisionnaire: {type: string, format: uuid}, reference_justificatif: {type: string}}}
+    ResilierContrat: {type: object, additionalProperties: false, required: [date_demande, date_resiliation, code_motif], properties: {date_demande: {type: string, format: date-time}, date_resiliation: {type: string, format: date-time}, code_motif: {type: string, minLength: 1}, identifiant_releve_finale: {type: string, format: uuid}, justification_absence_releve: {type: string}, references_documents: {type: array, items: {type: string}}}}
+    MuterContrat: {type: object, additionalProperties: false, required: [identifiant_tiers_entrant, date_mutation, nature_abonnement_entrant], properties: {identifiant_tiers_entrant: {type: string, format: uuid}, date_mutation: {type: string, format: date-time}, nature_abonnement_entrant: {type: string, minLength: 1}, identifiant_releve_mutation: {type: string, format: uuid}, justification_absence_releve: {type: string}, transfert_coordonnees_autorise: {type: boolean}, references_documents_entrants: {type: array, items: {type: string}}}}
+    CloturerParticipationContrat: {type: object, additionalProperties: false, required: [date_fin_validite, motif_fin], properties: {date_fin_validite: {type: string, format: date-time}, motif_fin: {type: string, minLength: 1}}}
+    CreerPointDesserte: {type: object, additionalProperties: false, required: [identifiant_commune, identifiant_adresse, origine, date_creation_metier], properties: {identifiant_commune: {type: string, description: "Identifiant interne du référentiel HydroSEA des communes, synchronisé avec le code INSEE."}, identifiant_adresse: {type: string, format: uuid, description: "Clé interne HydroSEA de ref.adresse ; ce n’est jamais un identifiant BAN."}, references_parcelles: {type: array, items: {type: string}}, localisation_operationnelle: {$ref: '#/components/schemas/LocalisationOperationnelle'}, origine: {type: string}, date_creation_metier: {type: string, format: date-time}, reference_demande_travaux: {type: string}}}
+    LocalisationOperationnelle: {type: object, additionalProperties: false, required: [longitude, latitude, source, date_source], properties: {longitude: {type: number, minimum: -180, maximum: 180}, latitude: {type: number, minimum: -90, maximum: 90}, source: {type: string}, date_source: {type: string, format: date-time}, provisoire: {type: boolean}}}
+    ModifierLocalisationPointDesserte: {type: object, additionalProperties: false, required: [source, date_effet, motif], properties: {identifiant_adresse: {type: string, format: uuid}, localisation_operationnelle: {$ref: '#/components/schemas/LocalisationOperationnelle'}, source: {type: string}, date_effet: {type: string, format: date-time}, motif: {type: string}}}
+    SynchroniserPointDesserteSig: {type: object, additionalProperties: false, required: [systeme_source, identifiant_sig, version_sig, date_synchronisation, resultat], properties: {systeme_source: {type: string}, identifiant_sig: {type: string}, version_sig: {type: string}, date_synchronisation: {type: string, format: date-time}, resultat: {type: string, enum: [CORRELE, MIS_A_JOUR, REJETE]}, motif_rejet: {type: string}}}
+    ChangerDisponibilitePointDesserte: {type: object, additionalProperties: false, required: [date_effet, motif], properties: {date_effet: {type: string, format: date-time}, date_fin_prevue: {type: string, format: date-time}, motif: {type: string}}}
+    RetirerPointDesserte: {type: object, additionalProperties: false, required: [date_retrait, motif], properties: {date_retrait: {type: string, format: date-time}, motif: {type: string}, reference_decision: {type: string}}}
+    CreerPointConsommation: {type: object, additionalProperties: false, required: [usage, identifiant_adresse, date_preparation], properties: {usage: {type: string}, nature_activite_habitation: {type: string}, identifiant_adresse: {type: string, format: uuid}, identifiant_point_desserte: {type: string, format: uuid}, date_debut_rattachement: {type: string, format: date-time}, date_preparation: {type: string, format: date-time}, identifiant_tournee: {type: string}, rang: {type: integer, minimum: 1}}}
+    ModifierPointConsommation: {type: object, additionalProperties: false, minProperties: 1, properties: {usage: {type: string}, nature_activite_habitation: {type: string}, rang: {type: integer, minimum: 1}, motif_modification: {type: string}}}
+    OuvrirPointConsommation: {type: object, additionalProperties: false, required: [date_ouverture], properties: {date_ouverture: {type: string, format: date-time}, reference_decision: {type: string}}}
+    FermerPointConsommation: {type: object, additionalProperties: false, required: [date_fermeture, motif], properties: {date_fermeture: {type: string, format: date-time}, motif: {type: string}, reference_decision: {type: string}}}
+    ReouvrirPointConsommation: {type: object, additionalProperties: false, required: [date_reouverture, motif], properties: {date_reouverture: {type: string, format: date-time}, motif: {type: string}}}
+    CreerRattachementDesserte: {type: object, additionalProperties: false, required: [identifiant_point_desserte, date_debut, motif_debut], properties: {identifiant_point_desserte: {type: string, format: uuid}, date_debut: {type: string, format: date-time}, motif_debut: {type: string}}}
+    CloturerRattachementDesserte: {type: object, additionalProperties: false, required: [date_fin, motif_fin], properties: {date_fin: {type: string, format: date-time}, motif_fin: {type: string}}}
+    ChangerRattachementDesserte: {type: object, additionalProperties: false, required: [identifiant_nouvelle_desserte, date_effet, motif], properties: {identifiant_nouvelle_desserte: {type: string, format: uuid}, date_effet: {type: string, format: date-time}, motif: {type: string}}}
+    AffecterTourneeReleve: {type: object, additionalProperties: false, required: [identifiant_tournee, date_effet, motif], properties: {identifiant_tournee: {type: string}, date_effet: {type: string, format: date-time}, motif: {type: string}}}
+    CorrigerAdressePointConsommation: {type: object, additionalProperties: false, required: [identifiant_adresse, source, date_effet, motif], description: "Corrige uniquement l’adresse de situation administrative du Point de consommation, sans modifier une adresse de Tiers, de Contrat, de facturation ou d’envoi.", properties: {identifiant_adresse: {type: string, format: uuid, description: "Clé interne HydroSEA de ref.adresse."}, identifiant_ban: {type: string, description: "Identifiant externe BAN facultatif associé à l’adresse ; distinct de la clé HydroSEA."}, source: {type: string}, date_effet: {type: string, format: date-time}, motif: {type: string}}}
+    CreerCompteur: {type: object, additionalProperties: false, required: [numero_serie, fabricant], properties: {numero_serie: {type: string}, fabricant: {type: string}, modele: {type: string}, calibre: {type: string}, technologie: {type: string}, annee_fabrication: {type: integer}, classe_metrologique: {type: string}, sens_pose: {type: string}, type_compteur: {type: string}, type_lecture: {type: string}, capacite_telereleve: {type: boolean}, identifiant_module_radio: {type: string}, protocole_radio: {type: string}, date_acquisition: {type: string, format: date}, date_reception: {type: string, format: date}, provenance: {type: string}, lot: {type: string}, fournisseur: {type: string}, garantie_jusquau: {type: string, format: date}}}
+    ModifierCompteur: {type: object, additionalProperties: false, required: [motif], properties: {fabricant: {type: string}, modele: {type: string}, calibre: {type: string}, technologie: {type: string}, classe_metrologique: {type: string}, sens_pose: {type: string}, type_compteur: {type: string}, type_lecture: {type: string}, capacite_telereleve: {type: boolean}, identifiant_module_radio: {type: string}, protocole_radio: {type: string}, garantie_jusquau: {type: string, format: date}, motif: {type: string}}}
+    PoserCompteur: {type: object, additionalProperties: false, required: [identifiant_point_consommation, date_pose, index_pose, unite, motif, reference_intervention], properties: {identifiant_point_consommation: {type: string, format: uuid}, date_pose: {type: string, format: date-time}, index_pose: {type: number, minimum: 0}, unite: {type: string}, qualite_index: {type: string, enum: [LU, ESTIME]}, motif: {type: string}, reference_intervention: {type: string}, agent_ou_entreprise: {type: string}, scelle: {type: string}, sens_pose: {type: string}, fonction_affectation: {type: string}}}
+    DeposerCompteur: {type: object, additionalProperties: false, required: [date_depose, motif, reference_intervention, devenir], anyOf: [{properties: {index_depose: {type: number, minimum: 0}}, required: [index_depose]}, {properties: {justification_index_absent: {type: string, minLength: 1}}, required: [justification_index_absent]}], properties: {date_depose: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, unite: {type: string}, qualite_index: {type: string, enum: [LU, ESTIME, ILLISIBLE, ABSENT]}, justification_index_absent: {type: string}, motif: {type: string}, reference_intervention: {type: string}, devenir: {type: string, enum: [EN_STOCK, EN_CONTROLE, HORS_SERVICE, REFORME]}}}
+    RemplacerCompteur: {type: object, additionalProperties: false, required: [identifiant_compteur_entrant, date_remplacement, index_depose, index_pose, unite, motif, reference_intervention], properties: {identifiant_compteur_entrant: {type: string, format: uuid}, date_remplacement: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, index_pose: {type: number, minimum: 0}, unite: {type: string}, qualite_index_depose: {type: string}, qualite_index_pose: {type: string}, motif: {type: string}, reference_intervention: {type: string}, devenir_compteur_sortant: {type: string, enum: [EN_STOCK, EN_CONTROLE, HORS_SERVICE, REFORME]}}}
+    ReformerCompteur: {type: object, additionalProperties: false, required: [date_reforme, motif_reforme, decisionnaire], properties: {date_reforme: {type: string, format: date-time}, motif_reforme: {type: string}, decisionnaire: {type: string}, diagnostic: {type: string}}}
+    MettreCompteurControle: {type: object, additionalProperties: false, required: [date_controle, motif], properties: {date_controle: {type: string, format: date-time}, motif: {type: string}, organisme: {type: string}, reference_intervention: {type: string}}}
+    RemettreCompteurDisponible: {type: object, additionalProperties: false, required: [date_resultat, resultat, reference_controle], properties: {date_resultat: {type: string, format: date-time}, resultat: {type: string, enum: [FAVORABLE]}, reference_controle: {type: string}, organisme: {type: string}, motif: {type: string}}}
+    CorrigerAffectationCompteur: {type: object, additionalProperties: false, required: [motif_correction], minProperties: 2, properties: {date_debut_validite: {type: string, format: date-time}, date_fin_validite: {type: string, format: date-time}, index_pose: {type: number, minimum: 0}, index_depose: {type: number, minimum: 0}, unite: {type: string}, qualite_index_pose: {type: string}, qualite_index_depose: {type: string}, reference_intervention: {type: string}, motif_correction: {type: string}}}
+    CreerAffectationCompteur: {type: object, additionalProperties: false, description: Schéma interne non exposé par une opération autonome., required: [identifiant_compteur, identifiant_point_consommation, date_debut_validite, index_pose], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_point_consommation: {type: string, format: uuid}, date_debut_validite: {type: string, format: date-time}, index_pose: {type: number, minimum: 0}, unite: {type: string}, motif_pose: {type: string}, reference_intervention: {type: string}}}
     CreerReleve: {type: object, additionalProperties: false, required: [identifiant_compteur, valeur_index, date_mesure, origine], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_affectation: {type: string, format: uuid}, valeur_index: {type: number, minimum: 0}, date_mesure: {type: string, format: date-time}, origine: {type: string}, estimation: {type: boolean}}}
     CorrigerReleve: {type: object, additionalProperties: false, required: [identifiant_compteur, valeur_index, date_mesure, origine, motif_correction], properties: {identifiant_compteur: {type: string, format: uuid}, identifiant_affectation: {type: string, format: uuid}, valeur_index: {type: number, minimum: 0}, date_mesure: {type: string, format: date-time}, origine: {type: string}, estimation: {type: boolean}, motif_correction: {type: string}}}
     CalculerFacture: {type: object, additionalProperties: false, required: [periode_debut, periode_fin], properties: {periode_debut: {type: string, format: date}, periode_fin: {type: string, format: date}, identifiants_contrats: {type: array, items: {type: string, format: uuid}}}}

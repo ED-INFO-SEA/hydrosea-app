@@ -5,18 +5,28 @@ x-commande: &commande [{$ref: '../openapi.yaml#/components/parameters/Idempotenc
 compteurs:
   get:
     operationId: rechercher_compteurs
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des compteurs
     description: Recherche paginée par numéro de série et statut.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
     parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
     responses: {'200': {description: Page de compteurs, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageCompteurs'}}}}, <<: *erreur}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-CPT]
-    x-hydrosea-evt: [EVT-CPT-001]
+    x-hydrosea-bs: [BS-CPT-003]
+    x-hydrosea-rm: [RM-CPT-002]
+    x-hydrosea-evt: [AUCUN_EVENEMENT_PRODUIT]
     x-hydrosea-tables: [cpt.compteur]
   post:
     operationId: enregistrer_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Enregistrer un compteur
     description: Enregistre un compteur dans le parc sans l’affecter à un Point.
     tags: [Comptage]
@@ -25,24 +35,34 @@ compteurs:
     requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerCompteur'}}}}
     responses: {'201': {description: Compteur enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur}
     x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-CPT]
+    x-hydrosea-rm: [RM-CPT-001, RM-CPT-002]
     x-hydrosea-evt: [EVT-CPT-001]
     x-hydrosea-tables: [cpt.compteur]
 compteur:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
   get:
     operationId: consulter_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter un compteur
     description: Retourne le compteur et son état courant.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
     responses: {'200': {description: Compteur trouvé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_cible}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-CPT]
-    x-hydrosea-evt: [EVT-CPT-001]
+    x-hydrosea-bs: [BS-CPT-002]
+    x-hydrosea-rm: [RM-CPT-001]
+    x-hydrosea-evt: [AUCUN_EVENEMENT_PRODUIT]
     x-hydrosea-tables: [cpt.compteur]
   patch:
     operationId: modifier_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Modifier un compteur
     description: Corrige les caractéristiques autorisées sans modifier une affectation.
     tags: [Comptage]
@@ -50,112 +70,181 @@ compteur:
     parameters: [{$ref: '../openapi.yaml#/components/parameters/IfMatch'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
     requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ModifierCompteur'}}}}
     responses: {'200': {description: Compteur modifié, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-CPT]
-    x-hydrosea-evt: [EVT-CPT-008]
+    x-hydrosea-bs: [BS-CPT-004]
+    x-hydrosea-rm: [RM-CPT-001, RM-CPT-002, RM-CPT-016]
+    x-hydrosea-evt: [EVT-CPT-002]
     x-hydrosea-tables: [cpt.compteur]
 poser:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
   post:
     operationId: poser_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Poser un compteur
-    description: Crée ou active l’affectation au Point de consommation.
+    description: Pose atomiquement un Compteur disponible sur un Point de consommation, crée la période d’Affectation et conserve l’index de pose. Cette opération prospective ne crée ni n’active aucun Contrat et ne modifie aucune géométrie SIG.
     tags: [Comptage]
     security: [{oauth2: ['comptage:ecriture']}]
     parameters: *commande
-    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerAffectationCompteur'}}}}
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PoserCompteur'}}}}
     responses: {'201': {description: Affectation créée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-AFF, RM-CPT]
-    x-hydrosea-evt: [EVT-CPT-003, EVT-AFF-002]
+    x-hydrosea-bs: [BS-CPT-005]
+    x-hydrosea-rm: [RM-CPT-003, RM-CPT-004, RM-CPT-005, RM-CPT-008, RM-CPT-010]
+    x-hydrosea-evt: [EVT-CPT-003, EVT-CPT-009]
     x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
 deposer:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
   post:
     operationId: deposer_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Déposer un compteur
-    description: Clôture l’affectation active avec l’index de dépose.
+    description: Clôt atomiquement l’Affectation active avec l’index de dépose ou une justification qualifiée et place le Compteur dans son état de devenir. Cette opération prospective ne ferme pas le Point, ne résilie aucun Contrat et ne supprime aucune Relève.
     tags: [Comptage]
     security: [{oauth2: ['comptage:ecriture']}]
     parameters: *commande
-    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [date_depose, index_depose], properties: {date_depose: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, motif: {type: string}}}}}}
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/DeposerCompteur'}}}}
     responses: {'200': {description: Affectation clôturée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
-    x-hydrosea-bs: [BS-CPT-002]
-    x-hydrosea-rm: [RM-AFF]
-    x-hydrosea-evt: [EVT-CPT-004, EVT-AFF-003]
+    x-hydrosea-bs: [BS-CPT-006]
+    x-hydrosea-rm: [RM-CPT-007, RM-CPT-009, RM-CPT-011, RM-CPT-012]
+    x-hydrosea-evt: [EVT-CPT-004, EVT-CPT-010]
     x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
 remplacer:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
   post:
     operationId: remplacer_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Remplacer un compteur
-    description: Lie la dépose et la pose ; l’ordre temporel définitif reste documenté dans les arbitrages de données.
+    description: Remplace atomiquement le Compteur sortant par un Compteur entrant disponible au même instant T, clôt l’ancienne Affectation et crée la nouvelle avec leurs index. Cette opération prospective ne modifie ni Contrat, ni titulaire, ni dette, ni Point de desserte.
     tags: [Comptage]
     security: [{oauth2: ['comptage:ecriture']}]
     parameters: *commande
-    requestBody: {required: true, content: {application/json: {schema: {type: object, required: [identifiant_nouveau_compteur, date_remplacement, index_depose, index_pose], properties: {identifiant_nouveau_compteur: {type: string, format: uuid}, date_remplacement: {type: string, format: date-time}, index_depose: {type: number, minimum: 0}, index_pose: {type: number, minimum: 0}}}, examples: {remplacement: {$ref: '../examples/comptage.yaml#/remplacement'}}}}}
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/RemplacerCompteur'}, examples: {remplacement: {$ref: '../examples/comptage.yaml#/remplacement'}}}}}
     responses: {'200': {description: Remplacement enregistré, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
-    x-hydrosea-bs: [BS-CPT-003]
-    x-hydrosea-rm: [RM-AFF, RM-CPT]
-    x-hydrosea-evt: [EVT-CPT-005, EVT-AFF-003, EVT-AFF-002]
+    x-hydrosea-bs: [BS-CPT-007]
+    x-hydrosea-rm: [RM-CPT-005, RM-CPT-009, RM-CPT-010, RM-CPT-011, RM-CPT-013]
+    x-hydrosea-evt: [EVT-CPT-005]
     x-hydrosea-tables: [cpt.compteur, cpt.affectation_compteur]
 reformer:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
   post:
     operationId: reformer_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Réformer un compteur
-    description: Retire définitivement le compteur du parc utilisable selon RM-CPT.
+    description: Réforme définitivement un Compteur déposé et sans Affectation active, tout en conservant son identité, ses Affectations et ses Relèves historiques. Cette opération prospective ne supprime aucune donnée.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:administration']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/ReformerCompteur'}}}}
+    responses: {'200': {description: Compteur réformé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-008]
+    x-hydrosea-rm: [RM-CPT-003, RM-CPT-015, RM-CPT-016]
+    x-hydrosea-evt: [EVT-CPT-006]
+    x-hydrosea-tables: [cpt.compteur]
+mettre_controle:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: mettre_compteur_controle
+    x-hydrosea-disponibilite: {statut: prospectif, implementation: non_disponible, depot_cible: hydrosea-app, condition_activation: arbitrages_metier_valides}
+    summary: Mettre un Compteur en contrôle
+    description: Place un Compteur disponible ou déposé en contrôle métrologique après vérification de l’absence d’Affectation active. Cette opération prospective ne crée aucune Affectation et ne modifie ni Point ni Contrat.
     tags: [Comptage]
     security: [{oauth2: ['comptage:ecriture']}]
     parameters: *commande
-    responses: {'200': {description: Compteur réformé, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
-    x-hydrosea-bs: [BS-CPT-002]
-    x-hydrosea-rm: [RM-CPT]
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/MettreCompteurControle'}}}}
+    responses: {'200': {description: Compteur en contrôle, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-009]
+    x-hydrosea-rm: [RM-CPT-003, RM-CPT-016]
     x-hydrosea-evt: [EVT-CPT-007]
+    x-hydrosea-tables: [cpt.compteur]
+remettre_disponible:
+  parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantCompteur'}]
+  post:
+    operationId: remettre_compteur_disponible
+    x-hydrosea-disponibilite: {statut: prospectif, implementation: non_disponible, depot_cible: hydrosea-app, condition_activation: arbitrages_metier_valides}
+    summary: Remettre un Compteur disponible
+    description: Clôt un contrôle favorable et rend disponible un Compteur sans Affectation active, en conservant le résultat et sa référence. Cette opération prospective ne pose pas le Compteur.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:ecriture']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/RemettreCompteurDisponible'}}}}
+    responses: {'200': {description: Compteur disponible, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/Compteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-010]
+    x-hydrosea-rm: [RM-CPT-003, RM-CPT-016]
+    x-hydrosea-evt: [EVT-CPT-008]
     x-hydrosea-tables: [cpt.compteur]
 affectations:
   get:
     operationId: rechercher_affectations_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des affectations de compteur
     description: Recherche les périodes d’affectation par compteur ou Point.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
     parameters: [{name: identifiant_compteur, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
     responses: {'200': {description: Page d’affectations, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageAffectationsCompteur'}}}}, <<: *erreur}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-AFF]
-    x-hydrosea-evt: [EVT-AFF-001]
-    x-hydrosea-tables: [cpt.affectation_compteur]
-  post:
-    operationId: creer_affectation_compteur
-    summary: Créer une affectation de compteur
-    description: Prépare une affectation sans contourner le Service métier de pose.
-    tags: [Comptage]
-    security: [{oauth2: ['comptage:ecriture']}]
-    parameters: [{$ref: '../openapi.yaml#/components/parameters/IdempotencyKey'}, {$ref: '../openapi.yaml#/components/parameters/XCorrelationId'}]
-    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CreerAffectationCompteur'}}}}
-    responses: {'201': {description: Affectation préparée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-AFF]
-    x-hydrosea-evt: [EVT-AFF-001]
+    x-hydrosea-bs: [BS-CPT-011]
+    x-hydrosea-rm: [RM-CPT-004, RM-CPT-005, RM-CPT-007]
+    x-hydrosea-evt: [AUCUN_EVENEMENT_PRODUIT]
     x-hydrosea-tables: [cpt.affectation_compteur]
 affectation:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantAffectation'}]
   get:
     operationId: consulter_affectation_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter une affectation de compteur
     description: Retourne une période d’affectation et ses index figés.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
     responses: {'200': {description: Affectation trouvée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_cible}
-    x-hydrosea-bs: [BS-CPT-001]
-    x-hydrosea-rm: [RM-AFF]
-    x-hydrosea-evt: [EVT-AFF-001]
+    x-hydrosea-bs: [BS-CPT-011]
+    x-hydrosea-rm: [RM-CPT-004, RM-CPT-007]
+    x-hydrosea-evt: [AUCUN_EVENEMENT_PRODUIT]
+    x-hydrosea-tables: [cpt.affectation_compteur]
+  patch:
+    operationId: corriger_affectation_compteur
+    x-hydrosea-disponibilite: {statut: prospectif, implementation: non_disponible, depot_cible: hydrosea-app, condition_activation: arbitrages_metier_valides}
+    summary: Corriger une Affectation de compteur
+    description: Crée une rectification historisée d’une borne, d’un index, d’une qualité ou d’une référence d’intervention sans écraser les valeurs d’origine. Cette opération administrative prospective ne pose, ne dépose et ne remplace aucun Compteur.
+    tags: [Comptage]
+    security: [{oauth2: ['comptage:administration']}]
+    parameters: *commande
+    requestBody: {required: true, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/CorrigerAffectationCompteur'}}}}
+    responses: {'200': {description: Rectification enregistrée, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/AffectationCompteur'}}}}, <<: *erreur_version}
+    x-hydrosea-bs: [BS-CPT-012]
+    x-hydrosea-rm: [RM-CPT-005, RM-CPT-007, RM-CPT-012, RM-CPT-017]
+    x-hydrosea-evt: [EVT-CPT-011]
     x-hydrosea-tables: [cpt.affectation_compteur]
 cloturer_affectation:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantAffectation'}]
   post:
     operationId: cloturer_affectation_compteur
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Clôturer une affectation de compteur
     description: Clôture la période sans suppression physique.
     tags: [Comptage]
@@ -169,6 +258,11 @@ cloturer_affectation:
 releves:
   get:
     operationId: rechercher_releves
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rechercher des relèves
     description: Recherche paginée par compteur, Point, statut et période.
     tags: [Comptage]
@@ -181,6 +275,11 @@ releves:
     x-hydrosea-tables: [cpt.releve]
   post:
     operationId: enregistrer_releve
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Enregistrer une relève
     description: Enregistre une observation sans modifier une relève validée.
     tags: [Comptage]
@@ -196,6 +295,11 @@ releve:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
   get:
     operationId: consulter_releve
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Consulter une relève
     description: Retourne la mesure, son origine et son état de contrôle.
     tags: [Comptage]
@@ -209,6 +313,11 @@ valider_releve:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
   post:
     operationId: valider_releve
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Valider une relève
     description: Valide la relève après contrôles automatiques ou manuels.
     tags: [Comptage]
@@ -223,6 +332,11 @@ rejeter_releve:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
   post:
     operationId: rejeter_releve
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Rejeter une relève
     description: Rejette la relève avec un motif explicite.
     tags: [Comptage]
@@ -238,6 +352,11 @@ corriger_releve:
   parameters: [{$ref: '../openapi.yaml#/components/parameters/IdentifiantReleve'}]
   post:
     operationId: corriger_releve
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Corriger une relève
     description: Crée une nouvelle relève liée à l’originale ; aucune réécriture silencieuse.
     tags: [Comptage]
@@ -252,6 +371,11 @@ corriger_releve:
 importer_releves:
   post:
     operationId: importer_releves
+    x-hydrosea-disponibilite:
+      statut: prospectif
+      implementation: non_disponible
+      depot_cible: hydrosea-app
+      condition_activation: arbitrages_metier_valides
     summary: Importer un lot de relèves
     description: Retourne un bilan ligne par ligne ; le seuil de traitement asynchrone est à arbitrer.
     tags: [Comptage]

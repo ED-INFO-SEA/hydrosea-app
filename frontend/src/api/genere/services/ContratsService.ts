@@ -2,12 +2,21 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { ActiverContrat } from '../models/ActiverContrat';
+import type { AnnulerContrat } from '../models/AnnulerContrat';
+import type { CloturerParticipationContrat } from '../models/CloturerParticipationContrat';
 import type { ContratAbonnement } from '../models/ContratAbonnement';
 import type { CreerContratAbonnement } from '../models/CreerContratAbonnement';
 import type { CreerParticipationContrat } from '../models/CreerParticipationContrat';
 import type { ModifierContratAbonnement } from '../models/ModifierContratAbonnement';
+import type { ModifierParticipationContrat } from '../models/ModifierParticipationContrat';
+import type { MuterContrat } from '../models/MuterContrat';
 import type { PageContratsAbonnement } from '../models/PageContratsAbonnement';
 import type { ParticipationContrat } from '../models/ParticipationContrat';
+import type { ReactiverContrat } from '../models/ReactiverContrat';
+import type { ResilierContrat } from '../models/ResilierContrat';
+import type { SuspendreContrat } from '../models/SuspendreContrat';
+import type { ValiderContrat } from '../models/ValiderContrat';
 import type { CancelablePromise } from '../core/CancelablePromise';
 import { OpenAPI } from '../core/OpenAPI';
 import { request as __request } from '../core/request';
@@ -166,6 +175,7 @@ export class ContratsService {
         identifiantContrat,
         idempotencyKey,
         ifMatch,
+        requestBody,
         xCorrelationId,
     }: {
         identifiantContrat: string,
@@ -174,6 +184,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
+        requestBody: ValiderContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -187,6 +198,8 @@ export class ContratsService {
                 'If-Match': ifMatch,
                 'X-Correlation-Id': xCorrelationId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,
@@ -208,6 +221,7 @@ export class ContratsService {
         identifiantContrat,
         idempotencyKey,
         ifMatch,
+        requestBody,
         xCorrelationId,
     }: {
         identifiantContrat: string,
@@ -216,6 +230,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
+        requestBody: ActiverContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -229,6 +244,8 @@ export class ContratsService {
                 'If-Match': ifMatch,
                 'X-Correlation-Id': xCorrelationId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,
@@ -259,10 +276,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            motif: string;
-            date_effet?: string;
-        },
+        requestBody: SuspendreContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -299,6 +313,7 @@ export class ContratsService {
         identifiantContrat,
         idempotencyKey,
         ifMatch,
+        requestBody,
         xCorrelationId,
     }: {
         identifiantContrat: string,
@@ -307,6 +322,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
+        requestBody: ReactiverContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -320,6 +336,54 @@ export class ContratsService {
                 'If-Match': ifMatch,
                 'X-Correlation-Id': xCorrelationId,
             },
+            body: requestBody,
+            mediaType: 'application/json',
+            errors: {
+                400: `Requête invalide.`,
+                401: `Authentification requise.`,
+                403: `Droit insuffisant.`,
+                404: `Ressource absente.`,
+                409: `Conflit métier ou clé d’idempotence réutilisée avec une empreinte différente.`,
+                412: `Version If-Match non satisfaite.`,
+                500: `Erreur interne sans information sensible.`,
+            },
+        });
+    }
+    /**
+     * Annuler un contrat d’abonnement
+     * Annule un contrat qui n’est jamais entré en vigueur ; cette commande de cycle justifie une opération autonome pour porter décision, motif, concurrence et idempotence.
+     * @returns ContratAbonnement Contrat annulé
+     * @throws ApiError
+     */
+    public static annulerContratAbonnement({
+        identifiantContrat,
+        idempotencyKey,
+        ifMatch,
+        requestBody,
+        xCorrelationId,
+    }: {
+        identifiantContrat: string,
+        idempotencyKey: string,
+        /**
+         * Version attendue de la ressource.
+         */
+        ifMatch: string,
+        requestBody: AnnulerContrat,
+        xCorrelationId?: string,
+    }): CancelablePromise<ContratAbonnement> {
+        return __request(OpenAPI, {
+            method: 'POST',
+            url: '/v1/contrats-abonnement/{identifiant_contrat}/annuler',
+            path: {
+                'identifiant_contrat': identifiantContrat,
+            },
+            headers: {
+                'Idempotency-Key': idempotencyKey,
+                'If-Match': ifMatch,
+                'X-Correlation-Id': xCorrelationId,
+            },
+            body: requestBody,
+            mediaType: 'application/json',
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,
@@ -350,10 +414,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            date_resiliation: string;
-            motif: string;
-        },
+        requestBody: ResilierContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -399,11 +460,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            identifiant_tiers_entrant: string;
-            date_mutation: string;
-            index_sortie?: number;
-        },
+        requestBody: MuterContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ContratAbonnement> {
         return __request(OpenAPI, {
@@ -495,11 +552,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            principal?: boolean;
-            responsabilite_financiere?: boolean;
-            ordre_affichage?: number;
-        },
+        requestBody: ModifierParticipationContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ParticipationContrat> {
         return __request(OpenAPI, {
@@ -547,10 +600,7 @@ export class ContratsService {
          * Version attendue de la ressource.
          */
         ifMatch: string,
-        requestBody: {
-            date_fin_validite: string;
-            motif_fin: string;
-        },
+        requestBody: CloturerParticipationContrat,
         xCorrelationId?: string,
     }): CancelablePromise<ParticipationContrat> {
         return __request(OpenAPI, {

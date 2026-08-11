@@ -13,6 +13,10 @@ components:
             contrats:ecriture: Écrire les contrats
             comptage:lecture: Lire les points, compteurs et relèves
             comptage:ecriture: Écrire les points, compteurs et relèves
+            comptage:administration: Réformer un Compteur et corriger l’historique métrologique
+            points:lecture: Consulter les Points de desserte et les Points de consommation
+            points:ecriture: Créer et modifier les Points, leurs cycles de vie et leurs rattachements
+            points:synchronisation: Corréler les Points de desserte avec le référentiel SIG
             facturation:lecture: Lire les factures
             facturation:ecriture: Commander la facturation
             paiements:lecture: Lire les paiements

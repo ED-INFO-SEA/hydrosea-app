@@ -12,7 +12,7 @@ import { request as __request } from '../core/request';
 export class TiersService {
     /**
      * Rechercher des Tiers
-     * Recherche multicritère et détection indicative de doublons ; la décision de fusion reste métier.
+     * Recherche multicritère paginée et minimisée. Cette opération ne qualifie pas les doublons ; BS-TIE-007 reste intégré à la création et aux décisions métier.
      * @returns PageTiers Page de Tiers
      * @throws ApiError
      */
@@ -118,7 +118,7 @@ export class TiersService {
     }
     /**
      * Modifier un Tiers
-     * Modifie les attributs autorisés selon la version attendue ; schéma PATCH spécifique à finaliser avec l’application.
+     * Modifie une spécialisation complète selon la version attendue. Le contrat interdit catégorie, référence, statut et données techniques ; la compatibilité avec la catégorie existante est contrôlée par RM-TIE-003 et ne peut être exprimée par OpenAPI seul.
      * @returns Tiers Tiers modifié
      * @throws ApiError
      */
@@ -161,7 +161,7 @@ export class TiersService {
     }
     /**
      * Fusionner deux Tiers
-     * Conserve le Tiers cible et archive le doublon selon RM-TIE ; la sélection automatique du survivant n’est pas définie.
+     * Contrat prospectif non implémenté. Fusionne sous contrôle humain et conserve le Tiers absorbé ; sélection du survivant et transferts restent arbitrés dans BS-TIE-008.
      * @returns Tiers Tiers conservé
      * @throws ApiError
      */
@@ -210,7 +210,7 @@ export class TiersService {
     }
     /**
      * Archiver un Tiers
-     * Archive le Tiers lorsque les dépendances métier l’autorisent.
+     * Archive logiquement le Tiers lorsque les dépendances métier l’autorisent ; la politique définitive sur contrats et dettes reste explicitement arbitrée dans BS-TIE-005.
      * @returns Tiers Tiers archivé
      * @throws ApiError
      */
@@ -258,7 +258,7 @@ export class TiersService {
     }
     /**
      * Réactiver un Tiers
-     * Réactive un Tiers archivé lorsque la règle métier l’autorise.
+     * Contrat prospectif non implémenté. Réactive un Tiers archivé en conservant identifiant et référence après contrôle des doublons et dépendances.
      * @returns Tiers Tiers réactivé
      * @throws ApiError
      */

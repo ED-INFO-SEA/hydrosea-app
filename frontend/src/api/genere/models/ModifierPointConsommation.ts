@@ -4,6 +4,8 @@
 /* eslint-disable */
 export type ModifierPointConsommation = {
     usage?: string;
-    identifiant_adresse?: string;
+    nature_activite_habitation?: string;
+    rang?: number;
+    motif_modification?: string;
 };
 
