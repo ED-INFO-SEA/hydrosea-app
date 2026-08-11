@@ -12,6 +12,8 @@ Prérequis : Docker Desktop démarré et les dépôts `hydrosea-app` et `hydrose
 .\scripts\demo.ps1
 ```
 
+Puis ouvrir `http://localhost:5173`.
+
 Le lanceur crée au besoin les configurations `.env` locales avec des secrets aléatoires non destinés à la production, démarre l’infrastructure, prépare Keycloak puis attend l’application. Si `hydrosea-infra` se trouve ailleurs :
 
 ```powershell

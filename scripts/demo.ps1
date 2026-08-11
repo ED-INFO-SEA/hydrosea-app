@@ -26,7 +26,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.UTF8Encoding]::new($false)
 
 $script:ApplicationPath = Split-Path -Parent $PSScriptRoot
 $script:ApplicationCompose = Join-Path $script:ApplicationPath 'compose.dev.yaml'
@@ -198,6 +198,20 @@ function Wait-Http {
     Stop-AvecErreur "$Nom ne répond pas sur $Url après $Timeout secondes. Vérifiez les journaux Docker Compose."
 }
 
+function Wait-BackendUp {
+    param([string]$Url, [int]$Timeout)
+    $limite = (Get-Date).AddSeconds($Timeout)
+    do {
+        try {
+            $reponse = Invoke-RestMethod -Uri $Url -TimeoutSec 5
+            if ($reponse.status -eq 'UP') { return }
+        } catch { }
+        Write-Host '  Attente du backend HydroSEA (état UP)...'
+        Start-Sleep -Seconds 3
+    } while ((Get-Date) -lt $limite)
+    Stop-AvecErreur "Le backend ne retourne pas réellement UP sur $Url après $Timeout secondes. Vérifiez les journaux Docker Compose."
+}
+
 function Test-PortOccupeParAutreProcessus {
     param([int]$Port, [string]$Service)
     $ecoute = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
@@ -239,6 +253,24 @@ function Invoke-Kcadm {
     } finally { Pop-Location }
 }
 
+function Invoke-KcadmJson {
+    param(
+        [string]$CheminInfrastructure,
+        [ValidateSet('create', 'update')][string]$Action,
+        [string]$Ressource,
+        [hashtable]$Donnees
+    )
+    $json = $Donnees | ConvertTo-Json -Depth 8 -Compress
+    Push-Location $CheminInfrastructure
+    try {
+        $json | & docker compose --env-file .env exec -T keycloak `
+            /opt/keycloak/bin/kcadm.sh $Action $Ressource -r hydrosea -f -
+        if ($LASTEXITCODE -ne 0) {
+            Stop-AvecErreur "La préparation Keycloak a échoué : $Action $Ressource avec JSON sur entrée standard."
+        }
+    } finally { Pop-Location }
+}
+
 function Initialize-KeycloakPreview {
     param([string]$CheminInfrastructure, [hashtable]$Configuration, [hashtable]$MotsDePasse)
     Invoke-Kcadm $CheminInfrastructure @('config', 'credentials', '--server', 'http://localhost:8080',
@@ -249,39 +281,64 @@ function Initialize-KeycloakPreview {
         '-q', 'clientId=hydrosea-web', '--fields', 'id')
     $clientId = ($clientJson | ConvertFrom-Json)[0].id
     if (-not $clientId) { Stop-AvecErreur 'Le client Keycloak hydrosea-web est absent.' }
-    Invoke-Kcadm $CheminInfrastructure @('update', "clients/$clientId", '-r', 'hydrosea',
-        '-s', 'redirectUris=["http://localhost:5173/*","http://app.hydrosea.local/*"]',
-        '-s', 'webOrigins=["http://localhost:5173","http://app.hydrosea.local"]') | Out-Null
+    Invoke-KcadmJson $CheminInfrastructure update "clients/$clientId" @{
+        redirectUris = @('http://localhost:5173/*', 'http://app.hydrosea.local/*')
+        webOrigins = @('http://localhost:5173', 'http://app.hydrosea.local')
+    } | Out-Null
 
     $portees = @('tiers:lecture', 'tiers:ecriture', 'points:lecture', 'points:ecriture',
         'contrats:lecture', 'contrats:ecriture', 'comptage:lecture', 'comptage:ecriture')
+    $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name') | ConvertFrom-Json
     foreach ($portee in $portees) {
-        $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name')
-        $scope = ($scopes | ConvertFrom-Json) | Where-Object name -EQ $portee | Select-Object -First 1
+        $scope = $scopes | Where-Object name -EQ $portee | Select-Object -First 1
         if (-not $scope) {
-            Invoke-Kcadm $CheminInfrastructure @('create', 'client-scopes', '-r', 'hydrosea',
-                '-s', "name=$portee", '-s', 'protocol=openid-connect') | Out-Null
-            $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name')
-            $scope = ($scopes | ConvertFrom-Json) | Where-Object name -EQ $portee | Select-Object -First 1
+            Invoke-KcadmJson $CheminInfrastructure create 'client-scopes' @{
+                name = $portee
+                protocol = 'openid-connect'
+            } | Out-Null
+            $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name') | ConvertFrom-Json
+            $scope = $scopes | Where-Object name -EQ $portee | Select-Object -First 1
         }
-        Invoke-Kcadm $CheminInfrastructure @('update', "clients/$clientId/default-client-scopes/$($scope.id)",
-            '-r', 'hydrosea') -AutoriserEchec | Out-Null
+        $porteesParDefaut = Invoke-Kcadm $CheminInfrastructure @('get', "clients/$clientId/default-client-scopes", '-r', 'hydrosea', '--fields', 'id') | ConvertFrom-Json
+        if ($scope.id -notin @($porteesParDefaut.id)) {
+            Invoke-Kcadm $CheminInfrastructure @('update', "clients/$clientId/default-client-scopes/$($scope.id)", '-r', 'hydrosea') | Out-Null
+        }
     }
 
-    $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name')
-    $audience = ($scopes | ConvertFrom-Json) | Where-Object name -EQ 'hydrosea-audience' | Select-Object -First 1
+    $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name') | ConvertFrom-Json
+    $audience = $scopes | Where-Object name -EQ 'hydrosea-audience' | Select-Object -First 1
     if (-not $audience) {
-        Invoke-Kcadm $CheminInfrastructure @('create', 'client-scopes', '-r', 'hydrosea',
-            '-s', 'name=hydrosea-audience', '-s', 'protocol=openid-connect') | Out-Null
-        $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name')
-        $audience = ($scopes | ConvertFrom-Json) | Where-Object name -EQ 'hydrosea-audience' | Select-Object -First 1
-        Invoke-Kcadm $CheminInfrastructure @('create', "client-scopes/$($audience.id)/protocol-mappers/models",
-            '-r', 'hydrosea', '-s', 'name=hydrosea-api', '-s', 'protocol=openid-connect',
-            '-s', 'protocolMapper=oidc-audience-mapper', '-s', 'config."included.custom.audience"=hydrosea-api',
-            '-s', 'config."access.token.claim"=true') | Out-Null
+        Invoke-KcadmJson $CheminInfrastructure create 'client-scopes' @{
+            name = 'hydrosea-audience'
+            protocol = 'openid-connect'
+        } | Out-Null
+        $scopes = Invoke-Kcadm $CheminInfrastructure @('get', 'client-scopes', '-r', 'hydrosea', '--fields', 'id,name') | ConvertFrom-Json
+        $audience = $scopes | Where-Object name -EQ 'hydrosea-audience' | Select-Object -First 1
     }
-    Invoke-Kcadm $CheminInfrastructure @('update', "clients/$clientId/default-client-scopes/$($audience.id)",
-        '-r', 'hydrosea') -AutoriserEchec | Out-Null
+
+    $donneesMapper = @{
+        name = 'hydrosea-api'
+        protocol = 'openid-connect'
+        protocolMapper = 'oidc-audience-mapper'
+        config = @{
+            'included.custom.audience' = 'hydrosea-api'
+            'access.token.claim' = 'true'
+            'id.token.claim' = 'false'
+            'introspection.token.claim' = 'true'
+        }
+    }
+    $mappers = Invoke-Kcadm $CheminInfrastructure @('get', "client-scopes/$($audience.id)/protocol-mappers/models", '-r', 'hydrosea') | ConvertFrom-Json
+    $mapper = $mappers | Where-Object name -EQ 'hydrosea-api' | Select-Object -First 1
+    if ($mapper) {
+        $donneesMapper.id = $mapper.id
+        Invoke-KcadmJson $CheminInfrastructure update "client-scopes/$($audience.id)/protocol-mappers/models/$($mapper.id)" $donneesMapper | Out-Null
+    } else {
+        Invoke-KcadmJson $CheminInfrastructure create "client-scopes/$($audience.id)/protocol-mappers/models" $donneesMapper | Out-Null
+    }
+    $porteesParDefaut = Invoke-Kcadm $CheminInfrastructure @('get', "clients/$clientId/default-client-scopes", '-r', 'hydrosea', '--fields', 'id') | ConvertFrom-Json
+    if ($audience.id -notin @($porteesParDefaut.id)) {
+        Invoke-Kcadm $CheminInfrastructure @('update', "clients/$clientId/default-client-scopes/$($audience.id)", '-r', 'hydrosea') | Out-Null
+    }
 
     $utilisateurs = @(
         @{ Nom = 'administrateur-demo'; Prenom = 'Administrateur'; NomFamille = 'Démonstration'; MotDePasse = $MotsDePasse.DEMO_ADMIN_PASSWORD },
@@ -289,13 +346,20 @@ function Initialize-KeycloakPreview {
         @{ Nom = 'agent-exploitation-demo'; Prenom = 'Agent'; NomFamille = 'Exploitation'; MotDePasse = $MotsDePasse.DEMO_EXPLOITATION_PASSWORD }
     )
     foreach ($utilisateur in $utilisateurs) {
-        $existant = Invoke-Kcadm $CheminInfrastructure @('get', 'users', '-r', 'hydrosea',
-            '-q', "username=$($utilisateur.Nom)", '--fields', 'id')
-        if (-not (($existant | ConvertFrom-Json)[0].id)) {
-            Invoke-Kcadm $CheminInfrastructure @('create', 'users', '-r', 'hydrosea',
-                '-s', "username=$($utilisateur.Nom)", '-s', 'enabled=true',
-                '-s', "firstName=$($utilisateur.Prenom)", '-s', "lastName=$($utilisateur.NomFamille)",
-                '-s', "email=$($utilisateur.Nom)@hydrosea.local", '-s', 'emailVerified=true') | Out-Null
+        $existants = Invoke-Kcadm $CheminInfrastructure @('get', 'users', '-r', 'hydrosea', '-q', "username=$($utilisateur.Nom)", '--fields', 'id') | ConvertFrom-Json
+        $identifiantUtilisateur = @($existants)[0].id
+        $donneesUtilisateur = @{
+            username = $utilisateur.Nom
+            enabled = $true
+            firstName = $utilisateur.Prenom
+            lastName = $utilisateur.NomFamille
+            email = "$($utilisateur.Nom)@hydrosea.local"
+            emailVerified = $true
+        }
+        if ($identifiantUtilisateur) {
+            Invoke-KcadmJson $CheminInfrastructure update "users/$identifiantUtilisateur" $donneesUtilisateur | Out-Null
+        } else {
+            Invoke-KcadmJson $CheminInfrastructure create 'users' $donneesUtilisateur | Out-Null
         }
         Invoke-Kcadm $CheminInfrastructure @('set-password', '-r', 'hydrosea', '--username',
             $utilisateur.Nom, '--new-password', $utilisateur.MotDePasse) | Out-Null
@@ -392,6 +456,7 @@ try {
     Invoke-DockerCompose $infra @('up', '-d') | Out-Null
     Wait-ComposeHealthy $infra 'postgres' $TimeoutSeconds
     Wait-ComposeHealthy $infra 'keycloak' $TimeoutSeconds
+    Wait-Http 'http://auth.hydrosea.local/realms/hydrosea/.well-known/openid-configuration' 'Keycloak via Traefik' $TimeoutSeconds
 
     Write-Etape 'Préparation de Keycloak'
     Initialize-KeycloakPreview $infra $configuration $motsDePasse
@@ -404,7 +469,7 @@ try {
     Test-PortOccupeParAutreProcessus 8080 'backend'
     Test-PortOccupeParAutreProcessus 5173 'frontend'
     Invoke-DockerCompose $script:ApplicationPath @('-f', 'compose.dev.yaml', 'up', '--build', '-d') | Out-Null
-    Wait-Http 'http://localhost:8080/actuator/health' 'Backend HydroSEA' $TimeoutSeconds
+    Wait-BackendUp 'http://localhost:8080/actuator/health' $TimeoutSeconds
 
     Write-Etape 'Démarrage du frontend'
     Wait-Http 'http://localhost:5173' 'Frontend HydroSEA' $TimeoutSeconds
