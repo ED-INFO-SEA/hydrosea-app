@@ -233,7 +233,10 @@ function Synthese() {
             <article>
               <small>Contrat actif</small>
               <b>{String(resume('contrat_actif')?.reference ?? 'Aucun')}</b>
-              <span>{String(resume('titulaire_principal')?.libelle ?? '')}</span>
+              <span>
+                <small>Titulaire principal</small>{' '}
+                {String(resume('titulaire_principal')?.libelle ?? '')}
+              </span>
             </article>
             <article>
               <small>Compteur courant</small>
