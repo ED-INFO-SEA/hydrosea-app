@@ -10,8 +10,9 @@ services:
       KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/hydrosea/protocol/openid-connect/certs
       RABBITMQ_HOST: rabbitmq
       MINIO_URL: http://minio:9000
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
     ports: ['127.0.0.1:8080:8080']
-    networks: [base_donnees,messagerie,stockage,identite]
+    networks: [frontal,base_donnees,messagerie,stockage,identite]
     read_only: true
     tmpfs: [/tmp]
     security_opt: [no-new-privileges:true]

@@ -14,7 +14,10 @@ $contenu = [System.IO.File]::ReadAllText($lanceur)
 $attendus = @(
     'docker compose', 'HYDROSEA_INFRA_PATH', 'KEYCLOAK_ADMIN_PASSWORD',
     'http://localhost:8080', 'actuator/health', 'Get-NetTCPConnection',
-    'Wait-ComposeHealthy', 'Wait-Http', 'ParameterSetName = ''Arreter''',
+    'Wait-ComposeHealthy', 'Wait-Http', 'Wait-BackendUp', 'Invoke-KcadmJson',
+    'UTF8Encoding]::new($false)',
+    'http://auth.hydrosea.local/realms/hydrosea/.well-known/openid-configuration',
+    'ParameterSetName = ''Arreter''',
     'ParameterSetName = ''Reinitialiser'''
 )
 foreach ($attendu in $attendus) {
@@ -22,6 +25,29 @@ foreach ($attendu in $attendus) {
 }
 if ($contenu -match '(?i)C:\\Users\\|docker\s+exec\s+hydrosea-keycloak|KEYCLOAK_ADMIN_USER') {
     throw 'Le lanceur contient un chemin utilisateur ou une ancienne hypothèse Keycloak interdite.'
+}
+if ($contenu -match 'redirectUris=\[|webOrigins=\[|config\."included\.custom\.audience"') {
+    throw 'Du JSON Keycloak est encore échappé dans les arguments de kcadm.sh.'
+}
+foreach ($compte in @('administrateur-demo', 'agent-relation-demo', 'agent-exploitation-demo')) {
+    if (($contenu.Split($compte).Count - 1) -lt 1) { throw "Compte Preview absent : $compte" }
+}
+foreach ($invariant in @(
+    "Where-Object name -EQ 'hydrosea-api'",
+    '$donneesMapper.id = $mapper.id',
+    'default-client-scopes',
+    "Where-Object name -EQ `$portee",
+    "if (`$identifiantUtilisateur)"
+)) {
+    if (-not $contenu.Contains($invariant)) { throw "Invariant idempotent Keycloak absent : $invariant" }
+}
+
+$compose = [System.IO.File]::ReadAllText((Join-Path $racine 'compose.dev.yaml'))
+if ($compose -notmatch 'networks:\s*\[frontal,base_donnees,messagerie,stockage,identite\]') {
+    throw 'Le backend ne rejoint pas tous les réseaux requis, dont frontal.'
+}
+if ($compose -notmatch "ports:\s*\['127\.0\.0\.1:8080:8080'\]") {
+    throw 'La publication locale du backend a changé.'
 }
 
 $contenuShell = [System.IO.File]::ReadAllText($shell)
