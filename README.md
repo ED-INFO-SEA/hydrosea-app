@@ -4,13 +4,33 @@ Ce dépôt porte le monolithe modulaire et l’application web HydroSEA. La Prev
 
 ## Lancer HydroSEA Preview 0.1
 
-Prérequis : Java 21, Node.js 22, Docker, GNU Make et `hydrosea-infra` démarré. Puis :
+### Windows 11 avec Docker Desktop
+
+Prérequis : Docker Desktop démarré et les dépôts `hydrosea-app` et `hydrosea-infra` placés côte à côte. Aucun GNU Make, Java ou Node.js local n’est requis :
+
+```powershell
+.\scripts\demo.ps1
+```
+
+Le lanceur crée au besoin les configurations `.env` locales avec des secrets aléatoires non destinés à la production, démarre l’infrastructure, prépare Keycloak puis attend l’application. Si `hydrosea-infra` se trouve ailleurs :
+
+```powershell
+.\scripts\demo.ps1 -InfraPath "C:\chemin\vers\hydrosea-infra"
+```
+
+Pour arrêter les services sans supprimer les volumes : `.\scripts\demo.ps1 -Stop`. Pour restaurer uniquement les données fictives : `.\scripts\demo.ps1 -Reset`.
+
+### Git Bash, Linux et macOS
+
+Prérequis : Docker, Docker Compose, GNU Make et `hydrosea-infra` placé à côté du dépôt. Puis :
 
 ```sh
 make demo
 ```
 
-L’interface est disponible sur `http://localhost:5173`. Les comptes locaux sont préparés par Keycloak à partir des variables `DEMO_*_PASSWORD` ; aucun secret réel n’est versionné. La Preview couvre Tiers, Points, Contrats jusqu’à Actif, Compteurs jusqu’à la pose, Synthèse et activité. Relèves, Facturation, Paiements et opérations terminales restent volontairement absents. Pour rétablir le jeu fictif : `make demo-reset`.
+L’interface est disponible sur `http://localhost:5173`. Les comptes locaux sont préparés par Keycloak ; leurs mots de passe aléatoires restent uniquement dans le fichier `.env` ignoré par Git. La Preview couvre Tiers, Points, Contrats jusqu’à Actif, Compteurs jusqu’à la pose, Synthèse et activité. Relèves, Facturation, Paiements et opérations terminales restent volontairement absents. Pour rétablir le jeu fictif : `make demo-reset`.
+
+La CI vérifie la syntaxe et les fonctions autonomes du lanceur sur Windows. GitHub Actions ne fournit pas de moteur Docker Desktop exécutant des conteneurs Linux sur son runner Windows ; le parcours Docker complet reste donc couvert par le scénario Linux `preview-e2e` et par l’essai local Windows 11 avec Docker Desktop.
 
 ## Démarrage rapide
 

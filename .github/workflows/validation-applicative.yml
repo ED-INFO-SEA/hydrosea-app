@@ -6,6 +6,18 @@ on:
 permissions:
   contents: read
 jobs:
+  lanceur-windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - name: Contrôler le lanceur PowerShell
+        shell: pwsh
+        run: |
+          ./scripts/demo.ps1 -SelfTest
+          ./tests/controle-demo-windows.ps1
+      - name: Limite du runner Windows
+        shell: pwsh
+        run: Write-Host 'Le parcours Docker Linux complet est exécuté par preview-e2e ; Docker Desktop n’est pas disponible sur ce runner Windows.'
   contrats-et-frontend:
     runs-on: ubuntu-24.04
     steps:
