@@ -9,6 +9,7 @@ points_desserte:
     description: Recherche les identités administratives des Points de desserte selon les critères autorisés. Cette lecture prospective restitue les corrélations SIG et localisations projetées disponibles sans interroger ni modifier directement le patrimoine SIG, les Points de consommation ou les compteurs.
     tags: [Points]
     security: [{oauth2: ['points:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}, {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}, {name: tri, in: query, schema: {type: string, enum: [date_creation, reference, statut], default: date_creation}}, {name: direction, in: query, schema: {type: string, enum: [asc, desc], default: desc}}]
     responses: {'200': {description: Succès, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PagePointsDesserte'}}}}, <<: *erreur_cible}
     x-hydrosea-bs: [BS-PD-003]
     x-hydrosea-rm: [RM-PD-001]
@@ -125,6 +126,7 @@ points_consommation:
     description: Recherche les unités administratives de consommation selon leur état, leur usage, leur adresse de situation ou leur rattachement historisé. Cette lecture prospective ne restitue pas de titulaire ou de compteur direct et ne modifie ni contrat, ni facturation, ni adresse de Tiers.
     tags: [Points]
     security: [{oauth2: ['points:lecture']}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}, {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}, {name: tri, in: query, schema: {type: string, enum: [date_creation, reference, statut], default: date_creation}}, {name: direction, in: query, schema: {type: string, enum: [asc, desc], default: desc}}]
     responses: {'200': {description: Succès, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PagePointsConsommation'}}}}, <<: *erreur_cible}
     x-hydrosea-bs: [BS-PC-003]
     x-hydrosea-rm: [RM-PC-002, RM-PC-008, RM-PC-011]

@@ -45,15 +45,17 @@ public class AdaptateurBoiteEnvoi implements PortEvenements {
   @Transactional
   public void publier() {
     List<MessageSortant> messages = jdbc.query("""
-        SELECT b.id,e.type_evenement,e.correlation_id,e.charge::text FROM evt.boite_envoi b
+        SELECT b.id,e.type_evenement,e.type_agregat,e.correlation_id,e.charge::text
+        FROM evt.boite_envoi b
         JOIN evt.evenement_metier e ON e.id=b.evenement_metier_id
         WHERE b.statut='A_PUBLIER' AND b.date_disponibilite<=now() ORDER BY b.date_disponibilite
         FOR UPDATE OF b SKIP LOCKED LIMIT 20
         """, (rs, n) -> new MessageSortant(rs.getObject(1, UUID.class), rs.getString(2),
-            rs.getObject(3, UUID.class), rs.getString(4)));
+            rs.getString(3), rs.getObject(4, UUID.class), rs.getString(5)));
     for (MessageSortant message : messages) {
       try {
-        rabbit.convertAndSend(echange, "tiers." + message.type.toLowerCase(), message.charge, m -> {
+        rabbit.convertAndSend(echange,
+            ConventionCleRoutage.depuis(message.typeAgregat, message.type), message.charge, m -> {
           m.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
           m.getMessageProperties().setCorrelationId(message.correlation.toString());
           m.getMessageProperties().setMessageId(message.id.toString());
@@ -74,5 +76,6 @@ public class AdaptateurBoiteEnvoi implements PortEvenements {
     try { return json.writeValueAsString(valeur); }
     catch (JsonProcessingException exception) { throw new IllegalArgumentException("Événement non sérialisable.", exception); }
   }
-  private record MessageSortant(UUID id, String type, UUID correlation, String charge) {}
+  private record MessageSortant(UUID id, String type, String typeAgregat, UUID correlation,
+      String charge) {}
 }

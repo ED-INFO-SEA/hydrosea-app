@@ -31,10 +31,26 @@ export class PointsService {
      * @returns PagePointsDesserte Succès
      * @throws ApiError
      */
-    public static rechercherPointsDesserte(): CancelablePromise<PagePointsDesserte> {
+    public static rechercherPointsDesserte({
+        page = 1,
+        taillePage = 20,
+        tri = 'date_creation',
+        direction = 'desc',
+    }: {
+        page?: number,
+        taillePage?: number,
+        tri?: 'date_creation' | 'reference' | 'statut',
+        direction?: 'asc' | 'desc',
+    }): CancelablePromise<PagePointsDesserte> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/v1/points-desserte',
+            query: {
+                'page': page,
+                'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
+            },
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,
@@ -334,10 +350,26 @@ export class PointsService {
      * @returns PagePointsConsommation Succès
      * @throws ApiError
      */
-    public static rechercherPointsConsommation(): CancelablePromise<PagePointsConsommation> {
+    public static rechercherPointsConsommation({
+        page = 1,
+        taillePage = 20,
+        tri = 'date_creation',
+        direction = 'desc',
+    }: {
+        page?: number,
+        taillePage?: number,
+        tri?: 'date_creation' | 'reference' | 'statut',
+        direction?: 'asc' | 'desc',
+    }): CancelablePromise<PagePointsConsommation> {
         return __request(OpenAPI, {
             method: 'GET',
             url: '/v1/points-consommation',
+            query: {
+                'page': page,
+                'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
+            },
             errors: {
                 400: `Requête invalide.`,
                 401: `Authentification requise.`,

@@ -31,13 +31,17 @@ export class ComptageService {
      * @throws ApiError
      */
     public static rechercherCompteurs({
-        page,
-        taillePage,
+        page = 1,
+        taillePage = 20,
+        tri = 'date_creation',
+        direction = 'desc',
         reference,
         statut,
     }: {
         page?: number,
         taillePage?: number,
+        tri?: 'date_creation' | 'numero_serie' | 'statut',
+        direction?: 'asc' | 'desc',
         reference?: string,
         statut?: string,
     }): CancelablePromise<PageCompteurs> {
@@ -47,6 +51,8 @@ export class ComptageService {
             query: {
                 'page': page,
                 'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
                 'reference': reference,
                 'statut': statut,
             },
@@ -445,11 +451,19 @@ export class ComptageService {
      * @throws ApiError
      */
     public static rechercherAffectationsCompteur({
+        page = 1,
+        taillePage = 20,
+        tri = 'date_creation',
+        direction = 'desc',
         identifiantCompteur,
         identifiantPointConsommation,
         dateDebut,
         dateFin,
     }: {
+        page?: number,
+        taillePage?: number,
+        tri?: 'date_creation' | 'index_pose',
+        direction?: 'asc' | 'desc',
         identifiantCompteur?: string,
         identifiantPointConsommation?: string,
         dateDebut?: string,
@@ -459,6 +473,10 @@ export class ComptageService {
             method: 'GET',
             url: '/v1/affectations-compteur',
             query: {
+                'page': page,
+                'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
                 'identifiant_compteur': identifiantCompteur,
                 'identifiant_point_consommation': identifiantPointConsommation,
                 'date_debut': dateDebut,

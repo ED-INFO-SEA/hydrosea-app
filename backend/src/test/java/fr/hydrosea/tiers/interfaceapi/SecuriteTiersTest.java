@@ -1,6 +1,7 @@
 package fr.hydrosea.tiers.interfaceapi;
 
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -27,7 +28,8 @@ class SecuriteTiersTest {
   @Test void exige_authentification() throws Exception { mvc.perform(get("/v1/tiers")).andExpect(status().isUnauthorized()); }
   @Test void refuse_sans_portee() throws Exception { mvc.perform(get("/v1/tiers").with(jwt())).andExpect(status().isForbidden()); }
   @Test void autorise_lecture_avec_portee() throws Exception {
-    when(service.rechercher(isNull(),isNull(),isNull(),isNull(),anyInt(),anyInt())).thenReturn(Page.empty());
+    when(service.rechercher(isNull(),isNull(),isNull(),isNull(),anyInt(),anyInt(),anyString(),
+        anyString())).thenReturn(Page.empty());
     mvc.perform(get("/v1/tiers").with(jwt().authorities(new SimpleGrantedAuthority("SCOPE_tiers:lecture")))).andExpect(status().isOk());
   }
 }

@@ -10,5 +10,5 @@ public final class ModelesAbonnements {private ModelesAbonnements(){}
  public record CommandeAjouterParticipant(UUID tiers,String role,boolean responsabilite,LocalDate debut){}
  public record VueContrat(UUID id,String reference,UUID pointConsommationId,String natureAbonnement,LocalDate dateDemande,LocalDate dateEffet,String statut,int version){}
  public record VueParticipant(UUID id,UUID contratId,UUID tiersId,String roleContractuel,boolean principal,boolean responsabiliteFinanciere,OffsetDateTime dateCreation){}
- public record PageContrats(List<VueContrat> resultats,int page,int taille,int total){}
+ public record PageContrats(List<VueContrat> resultats,int page,int taillePage,long nombreTotal){}
 }

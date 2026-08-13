@@ -255,7 +255,7 @@ components:
       type: object
       required: [code, titre, detail, statut_http, identifiant_correlation, date_erreur]
       properties:
-        code: {type: string, example: SYS-CONFLIT-VERSION}
+        code: {type: string, example: SYS-VERSION-OBSOLETE}
         titre: {type: string, example: Version obsolète}
         detail: {type: string}
         statut_http: {type: integer, minimum: 400, maximum: 599}

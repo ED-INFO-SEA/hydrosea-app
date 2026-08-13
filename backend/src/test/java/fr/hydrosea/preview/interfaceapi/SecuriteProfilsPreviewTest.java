@@ -1,5 +1,6 @@
 package fr.hydrosea.preview.interfaceapi;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,7 +16,6 @@ import fr.hydrosea.desserte.application.ServiceDesserte;
 import fr.hydrosea.preview.application.ServiceLecturePreview;
 import fr.hydrosea.tiers.application.ServiceTiers;
 import fr.hydrosea.tiers.interfaceapi.ControleurTiers;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,10 +42,11 @@ class SecuriteProfilsPreviewTest {
 
   @BeforeEach
   void preparerLectures() {
-    when(tiers.rechercher(null, null, null, null, 1, 20)).thenReturn(Page.empty());
-    when(desserte.listerDessertes()).thenReturn(List.of());
-    when(abonnements.lister()).thenReturn(List.of());
-    when(comptage.lister()).thenReturn(List.of());
+    when(tiers.rechercher(null, null, null, null, 1, 20, "reference", "asc"))
+        .thenReturn(Page.empty());
+    when(desserte.listerDessertes(any())).thenReturn(Page.empty());
+    when(abonnements.lister(any())).thenReturn(Page.empty());
+    when(comptage.lister(any())).thenReturn(Page.empty());
   }
 
   @Test
@@ -70,6 +71,13 @@ class SecuriteProfilsPreviewTest {
     var profil = profil("points:lecture", "comptage:lecture", "comptage:ecriture");
     mvc.perform(get("/v1/points-desserte").with(profil)).andExpect(status().isOk());
     mvc.perform(get("/v1/compteurs").with(profil)).andExpect(status().isOk());
+  }
+
+  @Test
+  void rejetteUneTailleDePageSuperieureALaBorne() throws Exception {
+    mvc.perform(get("/v1/compteurs?taille_page=101")
+        .with(profil("comptage:lecture")))
+        .andExpect(status().isBadRequest());
   }
 
   @Test

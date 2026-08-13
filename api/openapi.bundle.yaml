@@ -50,6 +50,23 @@ paths:
             minimum: 1
             maximum: 100
             default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - reference
+              - date_creation
+              - statut
+            default: reference
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: asc
         - name: recherche
           in: query
           schema:
@@ -472,12 +489,32 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 1
         - name: taille_page
           in: query
           schema:
             type: integer
             minimum: 1
             maximum: 100
+            default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - date_creation
+              - reference
+              - statut
+              - date_effet
+            default: date_creation
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
         - name: statut
           in: query
           schema:
@@ -1316,6 +1353,37 @@ paths:
       security:
         - oauth2:
             - points:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - date_creation
+              - reference
+              - statut
+            default: date_creation
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
       responses:
         '200':
           description: Succès
@@ -1736,6 +1804,37 @@ paths:
       security:
         - oauth2:
             - points:lecture
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - date_creation
+              - reference
+              - statut
+            default: date_creation
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
       responses:
         '200':
           description: Succès
@@ -2403,11 +2502,31 @@ paths:
           schema:
             type: integer
             minimum: 1
+            default: 1
         - name: taille_page
           in: query
           schema:
             type: integer
+            minimum: 1
             maximum: 100
+            default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - date_creation
+              - numero_serie
+              - statut
+            default: date_creation
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
         - name: reference
           in: query
           schema:
@@ -2963,6 +3082,35 @@ paths:
         - oauth2:
             - comptage:lecture
       parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: taille_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: tri
+          in: query
+          schema:
+            type: string
+            enum:
+              - date_creation
+              - index_pose
+            default: date_creation
+        - name: direction
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
         - name: identifiant_compteur
           in: query
           schema:
@@ -5010,7 +5158,7 @@ components:
       properties:
         code:
           type: string
-          example: SYS-CONFLIT-VERSION
+          example: SYS-VERSION-OBSOLETE
         titre:
           type: string
           example: Version obsolète

@@ -6,15 +6,16 @@ import fr.hydrosea.desserte.application.ModelesDesserte.CommandeModifierPointCon
 import fr.hydrosea.desserte.application.ModelesDesserte.VuePointConsommation;
 import fr.hydrosea.desserte.application.ModelesDesserte.VuePointDesserte;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PortDesserte {
-  List<VuePointDesserte> listerDessertes();
+  Page<VuePointDesserte> listerDessertes(Pageable page);
   VuePointDesserte obtenirDesserte(UUID id);
   VuePointDesserte creerDesserte(UUID id, String reference, CommandeCreerPointDesserte commande);
   VuePointDesserte rendreDisponible(UUID id, int version);
-  List<VuePointConsommation> listerPoints();
+  Page<VuePointConsommation> listerPoints(Pageable page);
   VuePointConsommation obtenirPoint(UUID id);
   VuePointConsommation creerPoint(UUID id, String reference, CommandeCreerPointConsommation commande);
   VuePointConsommation modifierPoint(UUID id, int version, CommandeModifierPointConsommation commande);

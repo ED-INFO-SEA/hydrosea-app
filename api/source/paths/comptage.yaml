@@ -14,7 +14,7 @@ compteurs:
     description: Recherche paginée par numéro de série et statut.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
-    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1}}, {name: taille_page, in: query, schema: {type: integer, maximum: 100}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}, {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}, {name: tri, in: query, schema: {type: string, enum: [date_creation, numero_serie, statut], default: date_creation}}, {name: direction, in: query, schema: {type: string, enum: [asc, desc], default: desc}}, {name: reference, in: query, schema: {type: string}}, {name: statut, in: query, schema: {type: string}}]
     responses: {'200': {description: Page de compteurs, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageCompteurs'}}}}, <<: *erreur}
     x-hydrosea-bs: [BS-CPT-003]
     x-hydrosea-rm: [RM-CPT-002]
@@ -198,7 +198,7 @@ affectations:
     description: Recherche les périodes d’affectation par compteur ou Point.
     tags: [Comptage]
     security: [{oauth2: ['comptage:lecture']}]
-    parameters: [{name: identifiant_compteur, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
+    parameters: [{name: page, in: query, schema: {type: integer, minimum: 1, default: 1}}, {name: taille_page, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}, {name: tri, in: query, schema: {type: string, enum: [date_creation, index_pose], default: date_creation}}, {name: direction, in: query, schema: {type: string, enum: [asc, desc], default: desc}}, {name: identifiant_compteur, in: query, schema: {type: string, format: uuid}}, {name: identifiant_point_consommation, in: query, schema: {type: string, format: uuid}}, {name: date_debut, in: query, schema: {type: string, format: date-time}}, {name: date_fin, in: query, schema: {type: string, format: date-time}}]
     responses: {'200': {description: Page d’affectations, content: {application/json: {schema: {$ref: '../openapi.yaml#/components/schemas/PageAffectationsCompteur'}}}}, <<: *erreur}
     x-hydrosea-bs: [BS-CPT-011]
     x-hydrosea-rm: [RM-CPT-004, RM-CPT-005, RM-CPT-007]

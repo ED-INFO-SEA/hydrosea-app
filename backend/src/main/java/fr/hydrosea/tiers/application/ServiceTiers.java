@@ -41,8 +41,18 @@ public class ServiceTiers {
 
   @Transactional(readOnly = true)
   public Page<Tiers> rechercher(String recherche, String reference, CategorieTiers categorie,
-      String statut, int page, int taille) {
-    return port.rechercher(recherche, reference, categorie, statut, PageRequest.of(page - 1, taille));
+      String statut, int page, int taille, String tri, String direction) {
+    if (page < 1) throw new IllegalArgumentException("La page doit être supérieure ou égale à 1.");
+    if (taille < 1 || taille > 100) {
+      throw new IllegalArgumentException("La taille de page doit être comprise entre 1 et 100.");
+    }
+    org.springframework.data.domain.Sort.Direction sens;
+    try { sens = org.springframework.data.domain.Sort.Direction.fromString(direction); }
+    catch (IllegalArgumentException exception) {
+      throw new IllegalArgumentException("La direction de tri doit être asc ou desc.");
+    }
+    return port.rechercher(recherche, reference, categorie, statut,
+        PageRequest.of(page - 1, taille, org.springframework.data.domain.Sort.by(sens, tri)));
   }
 
   @Transactional

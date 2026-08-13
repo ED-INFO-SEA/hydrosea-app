@@ -2,6 +2,7 @@ package fr.hydrosea.comptage.infrastructure;
 
 import fr.hydrosea.commun.application.RegleMetierException;
 import fr.hydrosea.commun.application.VersionObsoleteException;
+import fr.hydrosea.commun.infrastructure.PaginationJdbc;
 import fr.hydrosea.comptage.application.ModelesComptage.CommandeCreerCompteur;
 import fr.hydrosea.comptage.application.ModelesComptage.CommandeModifierCompteur;
 import fr.hydrosea.comptage.application.ModelesComptage.CommandePoserCompteur;
@@ -9,9 +10,11 @@ import fr.hydrosea.comptage.application.ModelesComptage.VueAffectation;
 import fr.hydrosea.comptage.application.ModelesComptage.VueCompteur;
 import fr.hydrosea.comptage.application.PortComptage;
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -28,10 +31,13 @@ public class AdaptateurJdbcComptage implements PortComptage {
 
   public AdaptateurJdbcComptage(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
-  public List<VueCompteur> listerCompteurs() {
-    return jdbc.query("SELECT id,numero_serie,fabricant,modele,calibre,statut,version "
-        + "FROM cpt.compteur WHERE date_suppression IS NULL ORDER BY date_creation DESC LIMIT 100",
-        COMPTEUR);
+  public Page<VueCompteur> listerCompteurs(Pageable page) {
+    return PaginationJdbc.executer(jdbc,
+        "SELECT count(*) FROM cpt.compteur WHERE date_suppression IS NULL",
+        "SELECT id,numero_serie,fabricant,modele,calibre,statut,version "
+            + "FROM cpt.compteur WHERE date_suppression IS NULL",
+        page, Map.of("date_creation", "date_creation", "numero_serie", "numero_serie",
+            "statut", "statut"), COMPTEUR);
   }
 
   public VueCompteur obtenirCompteur(UUID id) {
@@ -69,10 +75,12 @@ public class AdaptateurJdbcComptage implements PortComptage {
     return obtenirAffectation(affectation);
   }
 
-  public List<VueAffectation> listerAffectations() {
-    return jdbc.query("SELECT id,compteur_id,point_consommation_id,index_pose,reference_intervention "
-        + "FROM cpt.affectation_compteur WHERE date_suppression IS NULL "
-        + "ORDER BY date_creation DESC LIMIT 100", AFFECTATION);
+  public Page<VueAffectation> listerAffectations(Pageable page) {
+    return PaginationJdbc.executer(jdbc,
+        "SELECT count(*) FROM cpt.affectation_compteur WHERE date_suppression IS NULL",
+        "SELECT id,compteur_id,point_consommation_id,index_pose,reference_intervention "
+            + "FROM cpt.affectation_compteur WHERE date_suppression IS NULL",
+        page, Map.of("date_creation", "date_creation", "index_pose", "index_pose"), AFFECTATION);
   }
 
   public VueAffectation obtenirAffectation(UUID id) {
