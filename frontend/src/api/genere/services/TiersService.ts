@@ -19,6 +19,8 @@ export class TiersService {
     public static rechercherTiers({
         page = 1,
         taillePage = 20,
+        tri = 'reference',
+        direction = 'asc',
         recherche,
         reference,
         categorie,
@@ -26,6 +28,8 @@ export class TiersService {
     }: {
         page?: number,
         taillePage?: number,
+        tri?: 'reference' | 'date_creation' | 'statut',
+        direction?: 'asc' | 'desc',
         recherche?: string,
         reference?: string,
         categorie?: 'PERSONNE_PHYSIQUE' | 'PERSONNE_MORALE',
@@ -37,6 +41,8 @@ export class TiersService {
             query: {
                 'page': page,
                 'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
                 'recherche': recherche,
                 'reference': reference,
                 'categorie': categorie,

@@ -18,6 +18,8 @@ public final class ModelesDesserte {
   public record CommandeRattacherPointConsommation(UUID identifiantPointDesserte, OffsetDateTime dateDebutValidite) {}
   public record VuePointDesserte(UUID id, String reference, String statut, UUID identifiantCommune, UUID identifiantAdresse, int version) {}
   public record VuePointConsommation(UUID id, String reference, String statut, String usage, UUID identifiantAdresse, int version) {}
-  public record PagePointsDesserte(List<VuePointDesserte> resultats, int page, int taille, int total) {}
-  public record PagePointsConsommation(List<VuePointConsommation> resultats, int page, int taille, int total) {}
+  public record PagePointsDesserte(List<VuePointDesserte> resultats, int page, int taillePage,
+      long nombreTotal) {}
+  public record PagePointsConsommation(List<VuePointConsommation> resultats, int page,
+      int taillePage, long nombreTotal) {}
 }

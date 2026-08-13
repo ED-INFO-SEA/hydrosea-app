@@ -6,7 +6,7 @@ import fr.hydrosea.commun.application.ServiceIdempotence;
 import fr.hydrosea.tiers.application.CommandeCreerTiers;
 import fr.hydrosea.tiers.application.CommandeModifierTiers;
 import fr.hydrosea.tiers.application.ServiceTiers;
-import fr.hydrosea.tiers.application.VersionObsoleteException;
+import fr.hydrosea.commun.application.VersionObsoleteException;
 import fr.hydrosea.tiers.domaine.PersonnePhysique;
 import fr.hydrosea.tiers.domaine.PersonneMorale;
 import fr.hydrosea.tiers.domaine.CategorieTiers;

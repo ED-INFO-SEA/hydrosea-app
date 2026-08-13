@@ -17,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,15 +38,18 @@ public class ControleurTiers {
   @PreAuthorize("hasAuthority('SCOPE_tiers:lecture')")
   public PageTiers rechercher(@RequestParam(defaultValue="1") int page,@RequestParam(defaultValue="20") int taillePage,
       @RequestParam(required=false) String recherche,@RequestParam(required=false) String reference,
-      @RequestParam(required=false) CategorieTiers categorie,@RequestParam(required=false) String statut) {
-    return PageTiers.depuis(service.rechercher(recherche,reference,categorie,statut,page,taillePage));
+      @RequestParam(required=false) CategorieTiers categorie,@RequestParam(required=false) String statut,
+      @RequestParam(defaultValue="reference") String tri,
+      @RequestParam(defaultValue="asc") String direction) {
+    return PageTiers.depuis(service.rechercher(recherche,reference,categorie,statut,page,taillePage,
+        tri,direction));
   }
   @PostMapping
   @PreAuthorize("hasAuthority('SCOPE_tiers:ecriture')")
   public ResponseEntity<VueTiers> creer(@RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody CreerTiers requete,
       Authentication authentification) {
     UUID correlation=FiltreCorrelation.courante();
-    var resultat=idempotence.executer(authentification.getName(),cle,"CREER_TIERS","/v1/tiers",requete,VueTiers.class,
+    var resultat=idempotence.executer(identifiantClient(authentification),cle,"CREER_TIERS","/v1/tiers",requete,VueTiers.class,
         () -> {
           VueTiers vue=VueTiers.depuis(service.creer(requete.commande(),correlation));
           return ResponseEntity.status(HttpStatus.CREATED).location(URI.create("/v1/tiers/"+vue.identifiantTiers()))
@@ -71,7 +75,7 @@ public class ControleurTiers {
   public ResponseEntity<VueTiers> archiver(@PathVariable UUID identifiant,@RequestHeader(HttpHeaders.IF_MATCH) String ifMatch,
       @RequestHeader("Idempotency-Key") String cle,@Valid @RequestBody ArchiverTiers requete, Authentication authentification) {
     UUID correlation=FiltreCorrelation.courante(); String uri="/v1/tiers/"+identifiant+"/archiver";
-    var resultat=idempotence.executer(authentification.getName(),cle,"ARCHIVER_TIERS",uri,requete,VueTiers.class,
+    var resultat=idempotence.executer(identifiantClient(authentification),cle,"ARCHIVER_TIERS",uri,requete,VueTiers.class,
         () -> {
           VueTiers vue=VueTiers.depuis(service.archiver(identifiant,version(ifMatch),correlation));
           return ResponseEntity.ok().eTag(etag(vue.version())).header("X-Correlation-Id",correlation.toString()).body(vue);
@@ -83,4 +87,17 @@ public class ControleurTiers {
     return Integer.parseInt(valeur.substring(1,valeur.length()-1));
   }
   private static String etag(int version) { return "\""+version+"\""; }
+  private static String identifiantClient(Authentication authentification) {
+    if (authentification instanceof JwtAuthenticationToken jwt) {
+      String sujet = jwt.getToken().getSubject();
+      if (sujet != null && !sujet.isBlank()) return sujet;
+      String utilisateur = jwt.getToken().getClaimAsString("preferred_username");
+      if (utilisateur != null && !utilisateur.isBlank()) return utilisateur;
+      String session = jwt.getToken().getClaimAsString("session_state");
+      if (session != null && !session.isBlank()) return session;
+      String sessionOauth = jwt.getToken().getClaimAsString("sid");
+      if (sessionOauth != null && !sessionOauth.isBlank()) return sessionOauth;
+    }
+    return authentification.getName();
+  }
 }

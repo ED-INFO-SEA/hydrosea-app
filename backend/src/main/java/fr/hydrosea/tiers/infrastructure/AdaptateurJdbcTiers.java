@@ -2,7 +2,7 @@ package fr.hydrosea.tiers.infrastructure;
 
 import fr.hydrosea.tiers.application.PortTiers;
 import fr.hydrosea.tiers.application.ResultatDetectionDoublon;
-import fr.hydrosea.tiers.application.VersionObsoleteException;
+import fr.hydrosea.commun.application.VersionObsoleteException;
 import fr.hydrosea.tiers.domaine.CategorieTiers;
 import fr.hydrosea.tiers.domaine.PersonneMorale;
 import fr.hydrosea.tiers.domaine.PersonnePhysique;
@@ -71,8 +71,14 @@ public class AdaptateurJdbcTiers implements PortTiers {
     if (statut != null && !statut.isBlank()) { filtre.append(" AND t.statut=?"); parametres.add(statut); }
     Long total = jdbc.queryForObject("SELECT count(*) FROM ref.tiers t LEFT JOIN ref.tiers_personne_physique p ON p.tiers_id=t.id LEFT JOIN ref.tiers_personne_morale m ON m.tiers_id=t.id" + filtre,
         Long.class, parametres.toArray());
+    var tri = page.getSort().stream().findFirst().orElseThrow();
+    String colonne = java.util.Map.of("reference", "t.reference", "date_creation", "t.date_creation",
+        "statut", "t.statut").get(tri.getProperty());
+    if (colonne == null) throw new IllegalArgumentException("Critère de tri non autorisé.");
     parametres.add(page.getPageSize()); parametres.add(page.getOffset());
-    List<Tiers> resultat = jdbc.query(PROJECTION + filtre + " ORDER BY t.reference LIMIT ? OFFSET ?", this::mapper, parametres.toArray());
+    String ordre = colonne + (tri.isAscending() ? " ASC" : " DESC") + ", t.id ASC";
+    List<Tiers> resultat = jdbc.query(PROJECTION + filtre + " ORDER BY " + ordre
+        + " LIMIT ? OFFSET ?", this::mapper, parametres.toArray());
     return new PageImpl<>(resultat, page, total == null ? 0 : total);
   }
 

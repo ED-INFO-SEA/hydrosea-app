@@ -27,7 +27,7 @@ ressource_absente:
   identifiant_correlation: dddddddd-dddd-4ddd-8ddd-dddddddddddd
   date_erreur: '2026-08-05T09:55:00Z'
 conflit_version:
-  code: SYS-CONFLIT-VERSION
+  code: SYS-VERSION-OBSOLETE
   titre: Version obsolète
   detail: La version 4 a été demandée alors que la ressource est en version 5.
   statut_http: 412

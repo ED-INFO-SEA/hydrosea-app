@@ -28,8 +28,10 @@ export class ContratsService {
      * @throws ApiError
      */
     public static rechercherContratsAbonnement({
-        page,
-        taillePage,
+        page = 1,
+        taillePage = 20,
+        tri = 'date_creation',
+        direction = 'desc',
         statut,
         reference,
         identifiantTiers,
@@ -37,6 +39,8 @@ export class ContratsService {
     }: {
         page?: number,
         taillePage?: number,
+        tri?: 'date_creation' | 'reference' | 'statut' | 'date_effet',
+        direction?: 'asc' | 'desc',
         statut?: string,
         reference?: string,
         identifiantTiers?: string,
@@ -48,6 +52,8 @@ export class ContratsService {
             query: {
                 'page': page,
                 'taille_page': taillePage,
+                'tri': tri,
+                'direction': direction,
                 'statut': statut,
                 'reference': reference,
                 'identifiant_tiers': identifiantTiers,

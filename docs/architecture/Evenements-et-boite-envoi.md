@@ -21,5 +21,10 @@ sequenceDiagram
 
 Le publieur verrouille un lot sans bloquer ses pairs, incrémente les tentatives, diffère les reprises et classe en `ERREUR` après cinq échecs. Le `messageId` reprend l’identifiant de boîte d’envoi ; un destinataire futur doit le dédupliquer. Aucun consommateur métier n’est créé dans ce lot. Une file technique de test peut être déclarée uniquement sous le profil d’intégration.
 
-Les tables et leurs colonnes suivent `evt.evenement_metier` et `evt.boite_envoi` publiées par le modèle logique. L’échange durable est `hydrosea.metier`, avec les clés `tiers.tiers_cree`, `tiers.tiers_modifie` et `tiers.tiers_archive`.
+Les tables et leurs colonnes suivent `evt.evenement_metier` et `evt.boite_envoi` publiées par le modèle logique. L’échange durable est `hydrosea.metier`.
 
+La clé de routage canonique suit la forme `<type_agregat>.<type_evenement>`. Les deux termes
+sont les valeurs persistées en majuscules avec traits bas, converties en minuscules sans autre
+transformation. Exemples : `tiers.tiers_cree`, `contrat.contrat_valide` et
+`compteur.compteur_enregistre`. Cette convention s’applique automatiquement aux futurs agrégats ;
+le publieur ne contient aucun préfixe propre à un domaine.

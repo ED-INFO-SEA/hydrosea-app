@@ -1,9 +1,10 @@
 package fr.hydrosea.commun.interfaceapi;
 
 import fr.hydrosea.commun.application.ConflitIdempotenceException;
+import fr.hydrosea.commun.application.RegleMetierException;
 import fr.hydrosea.tiers.application.DoublonProbableException;
 import fr.hydrosea.tiers.application.TiersAbsentException;
-import fr.hydrosea.tiers.application.VersionObsoleteException;
+import fr.hydrosea.commun.application.VersionObsoleteException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +26,15 @@ public class GestionnaireErreursApi {
   ResponseEntity<ErreurApi> idempotence(Exception e) { return reponse("SYS-CLE-IDEMPOTENCE-CONFLIT","Clé d’idempotence en conflit",e.getMessage(),HttpStatus.CONFLICT); }
   @ExceptionHandler(DoublonProbableException.class)
   ResponseEntity<ErreurApi> doublon(Exception e) { return reponse("TIE-DOUBLON-CERTAIN","Doublon de Tiers",e.getMessage(),HttpStatus.CONFLICT); }
+  @ExceptionHandler(RegleMetierException.class)
+  ResponseEntity<ErreurApi> metier(RegleMetierException e) {
+    return reponse(e.code(),"Règle métier non satisfaite",e.getMessage(),HttpStatus.CONFLICT);
+  }
   @ExceptionHandler(VersionObsoleteException.class)
-  ResponseEntity<ErreurApi> version(Exception e) { return reponse("SYS-CONFLIT-VERSION","Version obsolète",e.getMessage(),HttpStatus.PRECONDITION_FAILED); }
+  ResponseEntity<ErreurApi> version(Exception e) {
+    return reponse("SYS-VERSION-OBSOLETE", "Version obsolète", e.getMessage(),
+        HttpStatus.PRECONDITION_FAILED);
+  }
   @ExceptionHandler(AuthorizationDeniedException.class)
   ResponseEntity<ErreurApi> interdit(Exception e) { return reponse("API-AUTORISATION","Droit insuffisant","La portée requise est absente.",HttpStatus.FORBIDDEN); }
   @ExceptionHandler(Exception.class)

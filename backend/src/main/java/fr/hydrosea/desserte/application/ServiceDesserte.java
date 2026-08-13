@@ -7,9 +7,10 @@ import fr.hydrosea.desserte.application.ModelesDesserte.CommandeRattacherPointCo
 import fr.hydrosea.desserte.application.ModelesDesserte.VuePointConsommation;
 import fr.hydrosea.desserte.application.ModelesDesserte.VuePointDesserte;
 import fr.hydrosea.evenements.application.PortEvenements;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,9 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class ServiceDesserte {
   private final PortDesserte port; private final PortEvenements evenements;
   public ServiceDesserte(PortDesserte port, PortEvenements evenements) { this.port=port; this.evenements=evenements; }
-  public List<VuePointDesserte> listerDessertes() { return port.listerDessertes(); }
+  public Page<VuePointDesserte> listerDessertes(Pageable page) { return port.listerDessertes(page); }
   public VuePointDesserte consulterDesserte(UUID id) { return port.obtenirDesserte(id); }
-  public List<VuePointConsommation> listerPoints() { return port.listerPoints(); }
+  public Page<VuePointConsommation> listerPoints(Pageable page) { return port.listerPoints(page); }
   public VuePointConsommation consulterPoint(UUID id) { return port.obtenirPoint(id); }
   @Transactional public VuePointDesserte creer(CommandeCreerPointDesserte commande, UUID correlation) { UUID id=UUID.randomUUID(); var vue=port.creerDesserte(id,port.prochainReferenceDesserte(),commande); publier("POINT_DESSERTE_CREE","POINT_DESSERTE",id,correlation); return vue; }
   @Transactional public VuePointDesserte rendreDisponible(UUID id,int version,UUID correlation) { var vue=port.rendreDisponible(id,version); publier("POINT_DESSERTE_DISPONIBLE","POINT_DESSERTE",id,correlation); return vue; }
